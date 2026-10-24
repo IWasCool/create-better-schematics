@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "better_schematics_tests",
+  "version": "1.0.0",
+  "name": "Better Schematics Fabric tests",
+  "environment": "server",
+  "mixins": ["better_schematics_tests.mixins.json"],
+  "entrypoints": {
+    "fabric-gametest": ["com.ourcreationstudios.create_better_schematics.gametest.SchematicPorterCrossLoaderTests"]
+  }
+}

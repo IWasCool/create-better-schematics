@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="All Rights Reserved"
+issueTrackerURL="https://github.com/IWasCool/create-better-schematics/issues"
+[[mods]]
+modId="create_better_schematics"
+version="0.0.3"
+displayName="Create: Better Schematics (Forge companion)"
+displayURL="https://github.com/IWasCool/create-better-schematics"
+description='''Preserves mechanical-arm targets, threshold-switch settings, Factory Gauge configurations, Power Grid wires, and addon configuration profiles when copying schematics, including transfers to NeoForge.'''
+[[dependencies.create_better_schematics]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.10,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.create_better_schematics]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.create_better_schematics]]
+modId="create"
+mandatory=true
+versionRange="[6.0.8,6.1)"
+ordering="AFTER"
+side="BOTH"

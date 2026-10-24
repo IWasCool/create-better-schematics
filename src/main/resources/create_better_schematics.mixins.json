@@ -1,0 +1,27 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.ourcreationstudios.create_better_schematics.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BeltBlockMixin",
+    "BeltBlockEntityMixin",
+    "ArmBlockEntityMixin",
+    "SchematicItemMixin",
+    "SchematicExportMixin",
+    "ThresholdSwitchBlockEntityMixin",
+    "FactoryPanelBehaviourMixin",
+    "FactoryPanelSupportBehaviourMixin",
+    "AddonBlockEntityDataMixin",
+    "AddonMaterialRequirementMixin",
+    "NewAgeEnergiserMixin",
+    "SchematicPrinterWireMixin",
+    "SchematicannonWireMaterialsMixin",
+    "StructureTemplateAccessor",
+    "SchematicannonBlockEntityMixin"
+  ],
+  "client": ["client.SchematicannonScreenMixin", "client.SchematicTableScreenMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

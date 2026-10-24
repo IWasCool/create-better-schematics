@@ -1,0 +1,9 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="All Rights Reserved"
+[[mods]]
+modId="better_schematics_compat_tests"
+version="1.0.0"
+displayName="Better Schematics Addon Compatibility Tests"
+[[mixins]]
+config="better_schematics_compat_tests.mixins.json"

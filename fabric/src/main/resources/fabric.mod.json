@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "create_better_schematics",
+  "version": "${version}",
+  "name": "Create: Better Schematics Porter Companion",
+  "description": "Preserves Create mechanical-arm targets and threshold-switch settings when placing converted schematics.",
+  "environment": "*",
+  "mixins": ["create_better_schematics_fabric.mixins.json"],
+  "license": "All Rights Reserved",
+  "contact": {
+    "homepage": "https://github.com/IWasCool/create-better-schematics",
+    "sources": "https://github.com/IWasCool/create-better-schematics",
+    "issues": "https://github.com/IWasCool/create-better-schematics/issues"
+  },
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "minecraft": "1.20.1",
+    "java": ">=17",
+    "create": ">=6.0.8.1"
+  }
+}

@@ -1,0 +1,13 @@
+package com.ourcreationstudios.create_better_schematics.mixin;
+
+import java.util.List;
+
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
+
+@Mixin(value = StructureTemplate.class, remap = false)
+public interface StructureTemplateAccessor {
+    @Accessor("palettes")
+    List<StructureTemplate.Palette> betterSchematics$getPalettes();
+}

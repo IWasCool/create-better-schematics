@@ -1,0 +1,112 @@
+plugins {
+    id 'fabric-loom' version '1.11.8'
+}
+
+group = 'com.ourcreationstudios.create_better_schematics'
+version = '0.0.3'
+base.archivesName = 'create_better_schematics-fabric-1.20.1'
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+repositories {
+    maven { url = 'https://api.modrinth.com/maven' }
+    maven { url = 'https://maven.createmod.net' }
+}
+
+dependencies {
+    minecraft 'com.mojang:minecraft:1.20.1'
+    mappings loom.officialMojangMappings()
+    modImplementation 'net.fabricmc:fabric-loader:0.17.3'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
+    modImplementation 'maven.modrinth:create-fabric:HAqwA6X1'
+}
+
+// Loom's development remap removes nested JARs. Expose the exact libraries shipped
+// in the pinned Create distribution to both javac and the development test server.
+def createArchive = new File(gradle.gradleUserHomeDir, 'caches/better-schematics/create-fabric-HAqwA6X1.jar')
+if (!createArchive.exists()) {
+    createArchive.parentFile.mkdirs()
+    new URI('https://cdn.modrinth.com/data/Xbc0uyRg/versions/HAqwA6X1/create-fabric-6.0.8.1%2Bbuild.1744-mc1.20.1.jar')
+            .toURL().withInputStream { input -> createArchive.withOutputStream { output -> output << input } }
+}
+def createHash = java.security.MessageDigest.getInstance('SHA-512').digest(createArchive.bytes).encodeHex().toString()
+if (createHash != '6edaddb93bc87bf8204376d3ceddd3e3dfec1d716556a5925802f2ade59ce5a660ded50088fa94188842ff83fc29445363dfa5d423e425b1574092833b6fa896')
+    throw new GradleException('The pinned Create Fabric distribution failed its SHA-512 check: ' + createArchive)
+def bundledDirectory = new File(createArchive.parentFile, 'HAqwA6X1-libraries')
+bundledDirectory.mkdirs()
+def pendingArchives = new ArrayDeque<File>()
+pendingArchives.add(createArchive)
+def visitedArchives = new HashSet<File>()
+def bundledMods = new LinkedHashMap<String, File>()
+while (!pendingArchives.isEmpty()) {
+    File archive = pendingArchives.removeFirst()
+    if (!visitedArchives.add(archive))
+        continue
+    new java.util.zip.ZipFile(archive).withCloseable { zip ->
+        def metadata = zip.getEntry('fabric.mod.json')
+        if (archive != createArchive && metadata != null) {
+            def mod = zip.getInputStream(metadata).withCloseable { new groovy.json.JsonSlurper().parse(it) }
+            // Prefer the distribution's direct libraries over an older nested copy.
+            bundledMods.putIfAbsent(mod.id.toString(), archive)
+        }
+        zip.entries().findAll { !it.directory && it.name.startsWith('META-INF/jars/') && it.name.endsWith('.jar') }.each { entry ->
+            byte[] bytes = zip.getInputStream(entry).withCloseable { it.bytes }
+            String hash = java.security.MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString()
+            File library = new File(bundledDirectory, hash.substring(0, 16) + '-' + new File(entry.name).name)
+            if (!library.exists())
+                library.bytes = bytes
+            pendingArchives.addLast(library)
+        }
+    }
+}
+dependencies { modImplementation files(bundledMods.values()) }
+
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
+def baselineTests = providers.gradleProperty('porterBaseline').isPresent()
+def testRunDirectory = baselineTests ? 'run-gametest-baseline' : 'run-porter-gametest'
+
+loom {
+    mods {
+        create_better_schematics { sourceSet sourceSets.main }
+        better_schematics_tests { sourceSet sourceSets.gametest }
+    }
+    runs {
+        gametest {
+            server()
+            name 'Fabric Porter Game Tests'
+            source sourceSets.gametest
+            vmArg '-Dfabric-api.gametest'
+            vmArg '-Dfabric-api.gametest.report-file=build/gametest-results.xml'
+            if (baselineTests)
+                vmArg '-Dfabric.debug.disableModIds=create_better_schematics,better_schematics_tests'
+            runDir testRunDirectory
+        }
+    }
+    mixin { defaultRefmapName = 'create_better_schematics_fabric.refmap.json' }
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+
+tasks.named('runGametest').configure {
+    def reportFile = file(testRunDirectory + '/build/gametest-results.xml')
+    doFirst { reportFile.delete() }
+    doLast {
+        if (!baselineTests) {
+            if (!reportFile.exists())
+                throw new GradleException('Fabric GameTest server did not produce a result report')
+            def cases = new groovy.xml.XmlSlurper().parse(reportFile).depthFirst().findAll { it.name() == 'testcase' }
+            if (cases.size() != 3 || cases.any { it.failure.size() > 0 || it.error.size() > 0 })
+                throw new GradleException('All three Fabric porter tests must pass; inspect ' + reportFile)
+        }
+    }
+}

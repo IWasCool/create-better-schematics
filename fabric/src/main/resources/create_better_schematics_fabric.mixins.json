@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.ourcreationstudios.create_better_schematics.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "create_better_schematics_fabric.refmap.json",
+  "mixins": ["ArmBlockEntityMixin", "ThresholdSwitchBlockEntityMixin"],
+  "injectors": {"defaultRequire": 1}
+}
