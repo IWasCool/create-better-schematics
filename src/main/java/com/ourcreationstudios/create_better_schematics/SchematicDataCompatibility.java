@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.mojang.serialization.Dynamic;
 import com.ourcreationstudios.create_better_schematics.factory.FactoryGaugeConnections;
+import com.ourcreationstudios.create_better_schematics.compat.SchematicFileFormat;
 import com.ourcreationstudios.create_better_schematics.porter.SchematicPorter;
 import com.ourcreationstudios.create_better_schematics.porter.AttributeFilterCompatibility;
 import com.ourcreationstudios.create_better_schematics.porter.LegacyTextComponents;
@@ -28,7 +29,7 @@ public final class SchematicDataCompatibility {
     }
 
     public static CompoundTag exportSchematic(CompoundTag schematic) {
-        return convert(schematic.copy(), true, 0);
+        return SchematicFileFormat.markExport(convert(schematic.copy(), true, 0), "neoforge");
     }
 
     private static CompoundTag convert(CompoundTag tag, boolean exporting, int depth) {

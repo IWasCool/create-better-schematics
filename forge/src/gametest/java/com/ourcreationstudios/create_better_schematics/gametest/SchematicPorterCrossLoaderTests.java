@@ -53,12 +53,21 @@ public class SchematicPorterCrossLoaderTests {
     }
 
     private static void transfer(GameTestHelper helper, Mirror mirror) throws IOException {
+        transfer(helper, mirror, "/fixtures/neoforge-ported-machines.nbt");
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void sharedNativeFileNeedsNoConversionButton(GameTestHelper helper) throws IOException {
+        transfer(helper, Mirror.FRONT_BACK, "/fixtures/neoforge-shared-machines.nbt");
+    }
+
+    private static void transfer(GameTestHelper helper, Mirror mirror, String resource) throws IOException {
         var level = helper.getLevel();
         String owner = "porter_test_" + UUID.randomUUID();
         Path directory = CreatePaths.UPLOADED_SCHEMATICS_DIR.resolve(owner);
         Files.createDirectories(directory);
         Path file = directory.resolve("ported-machines.nbt");
-        try (var fixture = SchematicPorterCrossLoaderTests.class.getResourceAsStream("/fixtures/neoforge-ported-machines.nbt")) {
+        try (var fixture = SchematicPorterCrossLoaderTests.class.getResourceAsStream(resource)) {
             helper.assertTrue(fixture != null, "Real porter fixture must exist");
             Files.copy(fixture, file);
         }

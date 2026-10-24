@@ -39,6 +39,7 @@ base {
 // Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 sourceSets.main.java.srcDir('common/src/main/java')
+sourceSets.main.java.srcDir('compatibility/src/main/java')
 
 def compatibilityTests = providers.gradleProperty('compatTests').isPresent()
 if (compatibilityTests) {
@@ -216,6 +217,36 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 // Include the output of "generateModMetadata" as an input directory for the build
 // this works with both building through Gradle and the IDE.
 sourceSets.main.resources.srcDir generateModMetadata
+
+// Load a separate test mod with Better Schematics entirely absent, including its mixins.
+if (providers.gradleProperty('nativeCompatibilityTests').isPresent()) {
+    sourceSets { nativeCompatibilityTest {} }
+    configurations {
+        nativeCompatibilityTestImplementation.extendsFrom implementation
+        nativeCompatibilityTestCompileOnly.extendsFrom compileOnly
+        nativeCompatibilityTestRuntimeOnly.extendsFrom runtimeClasspath
+    }
+    neoForge.addModdingDependenciesTo(sourceSets.nativeCompatibilityTest)
+    neoForge.mods {
+        better_schematics_native_tests { sourceSet sourceSets.nativeCompatibilityTest }
+    }
+    neoForge.runs {
+        nativeGameTestServer {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.nativeCompatibilityTest
+            loadedMods = [project.neoForge.mods.getByName('better_schematics_native_tests')]
+            gameDirectory = layout.buildDirectory.dir('native-compatibility/run')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'better_schematics_native_tests'
+        }
+    }
+    tasks.named('runNativeGameTestServer').configure {
+        doLast {
+            def log = layout.buildDirectory.file('native-compatibility/run/logs/latest.log').get().asFile
+            if (!log.exists() || !(log.text =~ /All \d+ required tests passed/).find())
+                throw new GradleException('Create-only compatibility tests did not pass; inspect ' + log)
+        }
+    }
+}
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 

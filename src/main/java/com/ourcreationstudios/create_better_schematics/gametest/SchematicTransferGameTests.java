@@ -151,6 +151,16 @@ public class SchematicTransferGameTests {
         BlockPos targetThreshold = target.offset(StructureTemplate.calculateRelativePosition(settings, sourceThreshold.subtract(origin)));
         try {
             CompoundTag exported = NbtIo.readCompressed(result.file(), NbtAccounter.unlimitedHeap());
+            helper.assertTrue(exported.getInt("DataVersion") == net.minecraft.SharedConstants.getCurrentVersion()
+                            .getDataVersion().getVersion(), "Shared exports retain the native Minecraft data version");
+            helper.assertTrue(exported.getCompound("CreateBetterSchematics").getInt("FormatVersion") == 1,
+                    "Optional compatibility metadata is versioned for future readers");
+            if (!emulateForge) {
+                Path fixtures = Path.of("../build/shareable-fixtures");
+                Files.createDirectories(fixtures);
+                Files.copy(result.file(), fixtures.resolve("neoforge-native.nbt"),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
             CompoundTag exportedArm = findBlock(exported, "create:mechanical_arm");
             CompoundTag exportedThreshold = findBlock(exported, "create:stockpile_switch");
             helper.assertTrue(exportedArm.getList("InteractionPoints", Tag.TAG_COMPOUND)

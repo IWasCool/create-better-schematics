@@ -20,7 +20,7 @@
     "StructureTemplateAccessor",
     "SchematicannonBlockEntityMixin"
   ],
-  "client": ["client.SchematicannonScreenMixin", "client.SchematicTableScreenMixin"],
+  "client": ["client.SchematicannonScreenMixin"],
   "injectors": {
     "defaultRequire": 1
   }

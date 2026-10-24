@@ -4,7 +4,7 @@ license="All Rights Reserved"
 issueTrackerURL="https://github.com/IWasCool/create-better-schematics/issues"
 [[mods]]
 modId="create_better_schematics"
-version="0.0.3"
+version="0.0.5"
 displayName="Create: Better Schematics (Forge companion)"
 displayURL="https://github.com/IWasCool/create-better-schematics"
 description='''Preserves mechanical-arm targets, threshold-switch settings, Factory Gauge configurations, Power Grid wires, and addon configuration profiles when copying schematics, including transfers to NeoForge.'''

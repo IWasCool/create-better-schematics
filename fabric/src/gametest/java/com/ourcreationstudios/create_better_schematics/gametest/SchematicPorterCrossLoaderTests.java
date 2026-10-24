@@ -79,12 +79,56 @@ public class SchematicPorterCrossLoaderTests implements FabricGameTest {
     }
 
     private static void transfer(GameTestHelper helper, Mirror mirror) throws IOException {
+        transfer(helper, mirror, "/fixtures/neoforge-ported-machines.nbt");
+    }
+
+    @GameTest(template = "better_schematics_tests:empty", timeoutTicks = 100)
+    public static void sharedNativeFileNeedsNoConversionButton(GameTestHelper helper) throws IOException {
+        transfer(helper, Mirror.FRONT_BACK, "/fixtures/neoforge-shared-machines.nbt");
+    }
+
+    @GameTest(template = "better_schematics_tests:empty")
+    public static void sharedFluidFileConvertsAutomatically(GameTestHelper helper) throws IOException {
+        var level = helper.getLevel();
+        String owner = "shared_fluid_" + UUID.randomUUID();
+        Path directory = CreatePaths.UPLOADED_SCHEMATICS_DIR.resolve(owner);
+        Files.createDirectories(directory);
+        Path file = directory.resolve("shared.nbt");
+        try (var fixture = SchematicPorterCrossLoaderTests.class.getResourceAsStream("/fixtures/neoforge-shared-fluid.nbt")) {
+            helper.assertTrue(fixture != null, "Native NeoForge fluid fixture must exist");
+            Files.copy(fixture, file);
+        }
+        byte[] before = Files.readAllBytes(file);
+        BlockPos pos = helper.absolutePos(new BlockPos(4, 2, 4));
+        var state = BuiltInRegistries.BLOCK.get(new ResourceLocation("create:stockpile_switch")).defaultBlockState();
+        var tank = BuiltInRegistries.BLOCK.get(new ResourceLocation("create:fluid_tank")).defaultBlockState();
+        level.setBlock(pos.relative(ThresholdSwitchBlock.getTargetDirection(state)), tank, 3);
+        try {
+            ItemStack blueprint = SchematicItem.create(level, "shared.nbt", owner);
+            var template = SchematicItem.loadSchematic(level, blueprint);
+            helper.assertTrue(template.placeInWorld(level, pos, pos,
+                    new net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings(),
+                    level.random, 3), "Native NeoForge schematic places directly on Fabric");
+            var threshold = (ThresholdSwitchBlockEntity) level.getBlockEntity(pos);
+            threshold.updateCurrentLevel();
+            helper.assertTrue(threshold.onWhenAbove == 162000 && threshold.offWhenBelow == 40500,
+                    "Automatic import scales millibuckets to droplets exactly once");
+            helper.assertTrue(java.util.Arrays.equals(before, Files.readAllBytes(file)),
+                    "Automatic import does not rewrite the original shared file");
+        } finally {
+            Files.deleteIfExists(file);
+            Files.deleteIfExists(directory);
+        }
+        helper.succeed();
+    }
+
+    private static void transfer(GameTestHelper helper, Mirror mirror, String resource) throws IOException {
         var level = helper.getLevel();
         String owner = "porter_test_" + UUID.randomUUID();
         Path directory = CreatePaths.UPLOADED_SCHEMATICS_DIR.resolve(owner);
         Files.createDirectories(directory);
         Path file = directory.resolve("ported-machines.nbt");
-        try (var fixture = SchematicPorterCrossLoaderTests.class.getResourceAsStream("/fixtures/neoforge-ported-machines.nbt")) {
+        try (var fixture = SchematicPorterCrossLoaderTests.class.getResourceAsStream(resource)) {
             helper.assertTrue(fixture != null, "Real porter fixture must exist");
             Files.copy(fixture, file);
         }

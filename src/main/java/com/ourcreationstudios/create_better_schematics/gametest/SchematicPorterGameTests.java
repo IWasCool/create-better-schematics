@@ -93,6 +93,10 @@ public class SchematicPorterGameTests {
             helper.assertTrue(source != null, "Create must save a real source schematic");
             byte[] original = Files.readAllBytes(source.file());
             CompoundTag originalData = NbtIo.readCompressed(source.file(), NbtAccounter.unlimitedHeap());
+            Path sharedFixtures = Path.of("../build/shareable-fixtures");
+            Files.createDirectories(sharedFixtures);
+            Files.copy(source.file(), sharedFixtures.resolve("neoforge-shared-machines.nbt"),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             for (Target target : Target.values()) {
                 var exported = SchematicPorter.export(directory, source.fileName(), target);
                 var report = exported.conversion();
@@ -147,6 +151,10 @@ public class SchematicPorterGameTests {
         helper.assertTrue(safe.getString(SchematicPorter.THRESHOLD_UNIT).equals("millibuckets"),
                 "A real tank observer must export its fluid-unit metadata");
         CompoundTag source = structure(safe);
+        Path sharedFixtures = Path.of("../build/shareable-fixtures");
+        Files.createDirectories(sharedFixtures);
+        NbtIo.writeCompressed(SchematicDataCompatibility.exportSchematic(source),
+                sharedFixtures.resolve("neoforge-shared-fluid.nbt"));
         CompoundTag fabric = SchematicPorter.convert(source, Target.FABRIC_1_20_1).data();
         Path fixtures = Path.of("..", "build", "cross-loader");
         Files.createDirectories(fixtures);
