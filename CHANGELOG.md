@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.10 — NeoForge 1.21.1
+
+- Show **Send materials to EMI** when EMI is installed, with a tooltip requiring and crediting **EMI: Create Schematics** by LiukRast and swzo.
+- Delegate EMI exports exclusively to the installed addon's clipboard exporter, including refreshes after applying block skips. Requires EMI: Create Schematics 1.1.0 or newer. The addon remains a separate download: [Modrinth](https://modrinth.com/mod/emi-create-schematics).
+- Disable the button when the required addon is missing or incompatible. EMI takes priority even with JEI installed; the JEI exporter and quantity mixins stay disabled in that setup.
+- Retain the existing JEI material export when EMI is absent. No server protocol change is required; Better Schematics 0.0.7 or newer supplies the materials.
+
+The EMI addon owns favourites, quantity rendering, replacement and persistence. Better Schematics only supplies the current material list and invokes its export method; it does not include or reproduce the addon's implementation. After reconnecting, click + to select the source cannon for automatic skip refreshes again. Forge/Fabric companions remain at 0.0.7.
+
+Validation: 196 base GameTests; live EMI 1.1.24 / EMI: Create Schematics 1.1.0 export, skip, empty-list and restore checks with and without JEI; a missing-addon check with EMI and JEI together; and the existing live JEI 19.70.0.460 regression check.
+
 ## 0.0.9 — NeoForge 1.21.1
 
 - Automatically update an imported JEI build list when skip choices are applied. Skipped materials disappear and unskipped materials return, including after Skip all.

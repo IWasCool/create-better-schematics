@@ -47,7 +47,7 @@ public final class CannonMaterialsService {
         } catch (ArithmeticException overflow) {
             return reply(request, List.of(), Result.TOO_LARGE);
         } catch (RuntimeException exception) {
-            CreateBetterSchematics.LOGGER.warn("Cannot read JEI materials for cannon at {}", cannon.getBlockPos(), exception);
+            CreateBetterSchematics.LOGGER.warn("Cannot read materials for cannon at {}", cannon.getBlockPos(), exception);
             return reply(request, List.of(), Result.FAILED);
         }
     }

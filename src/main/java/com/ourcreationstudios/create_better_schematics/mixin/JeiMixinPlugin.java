@@ -19,7 +19,8 @@ public final class JeiMixinPlugin implements IMixinConfigPlugin {
         if (!mixinClassName.endsWith(".JeiBookmarkElementMixin") && !mixinClassName.endsWith(".JeiBookmarkOverlayMixin"))
             return true;
         var mods = FMLLoader.getLoadingModList();
-        return mods != null && mods.getMods().stream().anyMatch(mod -> mod.getModId().equals("jei")
+        return mods != null && mods.getModFileById("emi") == null
+                && mods.getMods().stream().anyMatch(mod -> mod.getModId().equals("jei")
                 && mod.getVersion().compareTo(new DefaultArtifactVersion("19.53.0")) >= 0);
     }
     @Override public void onLoad(String mixinPackage) {}

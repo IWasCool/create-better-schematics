@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonMaterial;
+import com.ourcreationstudios.create_better_schematics.client.emi.EmiCreateSchematicsMaterials;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -34,15 +35,17 @@ public final class JeiMaterials {
     private JeiMaterials() {}
 
     public static boolean supportedVersion() {
-        return ModList.get().getModContainerById("jei")
+        return !EmiCreateSchematicsMaterials.installed() && ModList.get().getModContainerById("jei")
                 .map(mod -> mod.getModInfo().getVersion().compareTo(new DefaultArtifactVersion("19.53.0")) >= 0)
                 .orElse(false);
     }
 
-    public static boolean available() { return importer != null; }
+    public static boolean available() { return importer != null && !EmiCreateSchematicsMaterials.installed(); }
 
     public static void start(Consumer<List<CannonMaterial>> receiver) {
         stop();
+        if (!supportedVersion())
+            return;
         var minecraft = Minecraft.getInstance();
         if (minecraft.level == null)
             return;
@@ -82,7 +85,7 @@ public final class JeiMaterials {
     }
 
     public static void upload(List<CannonMaterial> materials, BlockPos cannon, ItemStack schematic) {
-        if (importer == null)
+        if (!available())
             throw new IllegalStateException("JEI bookmarks are not available");
         importer.accept(materials);
         sourceCannon = cannon.immutable();

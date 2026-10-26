@@ -3,6 +3,7 @@ package com.ourcreationstudios.create_better_schematics.client;
 import java.util.Locale;
 import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonMaterialsPackets;
+import com.ourcreationstudios.create_better_schematics.client.emi.EmiCreateSchematicsMaterials;
 import com.ourcreationstudios.create_better_schematics.client.jei.JeiMaterials;
 import com.simibubi.create.content.schematics.SchematicItem;
 import com.simibubi.create.content.schematics.cannon.SchematicannonScreen;
@@ -18,6 +19,16 @@ public final class CannonMaterialsClient {
     private CannonMaterialsClient() {}
 
     public static void clearPending() { pending = null; }
+
+    public static boolean usesEmi() { return EmiCreateSchematicsMaterials.installed(); }
+
+    public static boolean supportedViewer() { return usesEmi() || JeiMaterials.supportedVersion(); }
+
+    public static boolean exportAvailable() {
+        return usesEmi() ? EmiCreateSchematicsMaterials.available() : JeiMaterials.available();
+    }
+
+    public static boolean needsEmiAddon() { return usesEmi() && !EmiCreateSchematicsMaterials.addonInstalled(); }
 
     public static boolean serverAvailable() {
         var connection = Minecraft.getInstance().getConnection();
@@ -42,7 +53,10 @@ public final class CannonMaterialsClient {
 
     public static void refreshAfterSkips(SchematicannonScreen screen) {
         var cannon = screen.getMenu().contentHolder;
-        if (!JeiMaterials.isSource(cannon.getBlockPos(), cannon.inventory.getStackInSlot(0)) && !waiting(screen))
+        var blueprint = cannon.inventory.getStackInSlot(0);
+        boolean source = usesEmi() ? EmiCreateSchematicsMaterials.isSource(cannon.getBlockPos(), blueprint)
+                : JeiMaterials.isSource(cannon.getBlockPos(), blueprint);
+        if (!source && !waiting(screen))
             return;
         // An earlier reply must not restore materials calculated before Apply succeeded.
         pending = null;
@@ -50,7 +64,7 @@ public final class CannonMaterialsClient {
     }
 
     private static void request(SchematicannonScreen screen, boolean automatic) {
-        if (!JeiMaterials.available() || !serverAvailable() || waiting(screen))
+        if (!exportAvailable() || !serverAvailable() || waiting(screen))
             return;
         ItemStack blueprint = screen.getMenu().contentHolder.inventory.getStackInSlot(0);
         if (!(blueprint.getItem() instanceof SchematicItem))
@@ -76,12 +90,15 @@ public final class CannonMaterialsClient {
         }
         try {
             var cannon = request.screen.getMenu().contentHolder;
-            JeiMaterials.upload(view.entries(), cannon.getBlockPos(), cannon.inventory.getStackInSlot(0));
+            if (usesEmi())
+                EmiCreateSchematicsMaterials.upload(view.entries(), cannon.getBlockPos(), cannon.inventory.getStackInSlot(0));
+            else
+                JeiMaterials.upload(view.entries(), cannon.getBlockPos(), cannon.inventory.getStackInSlot(0));
             if (!request.automatic)
                 message(view.entries().isEmpty() ? "empty" : "success", true, view.entries().size());
         } catch (RuntimeException exception) {
-            CreateBetterSchematics.LOGGER.warn("Cannot upload cannon materials to JEI", exception);
-            message("error.jei", false);
+            CreateBetterSchematics.LOGGER.warn("Cannot export cannon materials to {}", usesEmi() ? "EMI: Create Schematics" : "JEI", exception);
+            message(usesEmi() ? "error.emi" : "error.jei", false);
         }
     }
 
@@ -92,7 +109,7 @@ public final class CannonMaterialsClient {
     }
 
     public static Component text(String key, Object... args) {
-        return Component.translatable(CreateBetterSchematics.MODID + ".cannon.jei." + key, args);
+        return Component.translatable(CreateBetterSchematics.MODID + (usesEmi() ? ".cannon.emi." : ".cannon.jei.") + key, args);
     }
 
     private static final class Pending {

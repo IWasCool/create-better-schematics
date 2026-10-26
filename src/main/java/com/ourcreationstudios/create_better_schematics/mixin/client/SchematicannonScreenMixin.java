@@ -5,7 +5,6 @@ import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipAccess;
 import com.ourcreationstudios.create_better_schematics.client.CannonSkipScreen;
 import com.ourcreationstudios.create_better_schematics.client.CannonMaterialsClient;
-import com.ourcreationstudios.create_better_schematics.client.jei.JeiMaterials;
 import com.simibubi.create.AllDataComponents;
 import com.simibubi.create.content.schematics.SchematicItem;
 import com.simibubi.create.content.schematics.cannon.SchematicannonMenu;
@@ -28,49 +27,52 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
         super(menu, inventory, title);
     }
 
-    @Unique private IconButton betterSchematics$jeiButton;
+    @Unique private IconButton betterSchematics$materialsButton;
     @Shadow protected IconButton skipMissingButton;
     @Shadow protected IconButton skipBlockEntitiesButton;
     @Shadow protected List<IconButton> replaceLevelButtons;
     @Shadow protected abstract boolean placementSettingsHidden();
 
     @Inject(method = "init", at = @At("RETURN"), remap = false)
-    private void betterSchematics$addJeiButton(CallbackInfo ci) {
-        betterSchematics$jeiButton = null;
-        if (!JeiMaterials.supportedVersion())
+    private void betterSchematics$addMaterialsButton(CallbackInfo ci) {
+        betterSchematics$materialsButton = null;
+        if (!CannonMaterialsClient.supportedViewer())
             return;
-        betterSchematics$jeiButton = new IconButton(leftPos + 152, topPos + 111, AllIcons.I_ADD);
-        betterSchematics$jeiButton.withCallback(() -> CannonMaterialsClient.request((SchematicannonScreen) (Object) this));
-        betterSchematics$jeiButton.setMessage(CannonMaterialsClient.text("button"));
-        addRenderableWidget(betterSchematics$jeiButton);
-        betterSchematics$updateJeiButton();
+        betterSchematics$materialsButton = new IconButton(leftPos + 152, topPos + 111, AllIcons.I_ADD);
+        betterSchematics$materialsButton.withCallback(() -> CannonMaterialsClient.request((SchematicannonScreen) (Object) this));
+        betterSchematics$materialsButton.setMessage(CannonMaterialsClient.text("button"));
+        addRenderableWidget(betterSchematics$materialsButton);
+        betterSchematics$updateMaterialsButton();
     }
 
     @Inject(method = "containerTick", at = @At("RETURN"), remap = false)
-    private void betterSchematics$tickJeiButton(CallbackInfo ci) {
+    private void betterSchematics$tickMaterialsButton(CallbackInfo ci) {
         CannonMaterialsClient.tick((SchematicannonScreen) (Object) this);
-        betterSchematics$updateJeiButton();
+        betterSchematics$updateMaterialsButton();
     }
 
     @Unique
-    private void betterSchematics$updateJeiButton() {
-        if (betterSchematics$jeiButton == null)
+    private void betterSchematics$updateMaterialsButton() {
+        if (betterSchematics$materialsButton == null)
             return;
         var blueprint = getMenu().contentHolder.inventory.getStackInSlot(0);
         boolean schematic = blueprint.getItem() instanceof SchematicItem
                 && blueprint.getOrDefault(AllDataComponents.SCHEMATIC_DEPLOYED, false);
         boolean waiting = CannonMaterialsClient.waiting((SchematicannonScreen) (Object) this);
-        betterSchematics$jeiButton.active = JeiMaterials.available() && CannonMaterialsClient.serverAvailable()
+        betterSchematics$materialsButton.active = CannonMaterialsClient.exportAvailable() && CannonMaterialsClient.serverAvailable()
                 && schematic && !waiting;
-        String hint = !JeiMaterials.available() ? "unavailable" : !CannonMaterialsClient.serverAvailable()
+        String hint = CannonMaterialsClient.needsEmiAddon() ? "needs_addon"
+                : !CannonMaterialsClient.exportAvailable() ? "unavailable" : !CannonMaterialsClient.serverAvailable()
                 ? "needs_server" : !schematic ? "needs_schematic" : waiting ? "loading" : "help";
-        betterSchematics$jeiButton.setToolTip(CannonMaterialsClient.text("button"));
-        betterSchematics$jeiButton.getToolTip().add(CannonMaterialsClient.text(hint));
+        betterSchematics$materialsButton.setToolTip(CannonMaterialsClient.text("button"));
+        betterSchematics$materialsButton.getToolTip().add(CannonMaterialsClient.text(hint));
+        if (CannonMaterialsClient.usesEmi())
+            betterSchematics$materialsButton.getToolTip().add(CannonMaterialsClient.text("required"));
     }
 
     @Inject(method = "initPlacementSettings", at = @At("RETURN"), remap = false)
     private void betterSchematics$openSkipPicker(CallbackInfo ci) {
-        if (!placementSettingsHidden() && betterSchematics$jeiButton != null) {
+        if (!placementSettingsHidden() && betterSchematics$materialsButton != null) {
             for (int index = 0; index < replaceLevelButtons.size(); index++)
                 replaceLevelButtons.get(index).setX(leftPos + 30 + index * 18);
             skipMissingButton.setX(leftPos + 106);

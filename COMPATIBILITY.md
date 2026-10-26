@@ -1,5 +1,15 @@
 # Addon schematic compatibility
 
+## EMI material export (NeoForge 0.0.10)
+
+When EMI is installed, the cannon's + button is labelled **Send materials to EMI**. It requires the separate [EMI: Create Schematics](https://modrinth.com/mod/emi-create-schematics) addon by **LiukRast and swzo**, version 1.1.0 or newer. A small optional bridge turns the server's material list into Create clipboard entries and invokes the addon's public `ClipboardScreenUtils.load` method, the same method its clipboard button uses. All EMI favourites, quantity display, replacement and persistence belong to that addon. Better Schematics includes no EMI exporter implementation, EMI API dependency or bundled addon.
+
+EMI takes priority over JEI. If the addon is absent or its export method is unavailable, the button stays disabled with an explanatory tooltip; JEI does not provide a fallback. JEI bookmark imports and quantity mixins are disabled whenever EMI is loaded. With EMI absent, the existing JEI integration below remains available.
+
+The server still needs Better Schematics 0.0.7 or newer to supply cannon materials; neither EMI nor its addon is required on the server. Applied skips are excluded. After exporting, Apply refreshes that cannon's list using the same addon, including an empty list after Skip all. Source selection is held only for the current client level/session: after reconnecting or changing schematics, click + again. The addon's existing clipboard button remains available.
+
+October 26, 2026 validation used the released EMI 1.1.24+1.21.1+neoforge and EMI: Create Schematics 1.1.0 jars. Live client checks passed with EMI alone plus the addon and with EMI, JEI 19.70.0.460 and the addon together: the real button imported 130 stone through the addon, excluded applied skipped blocks, refreshed after Apply, cleared after Skip all, restored after Build all, and retained a personal diamond favourite. With EMI and JEI installed but the addon absent, the button remained disabled, its tooltip named and credited the required addon, and a direct request did not start an export. The separate JEI-only live regression and all 196 base GameTests passed. Test code and downloaded test mods remain excluded from GitHub and the production jar.
+
 NeoForge 0.0.9 refreshes the active imported JEI build list after the server accepts Apply in the skip picker. Skipping removes imported entries and unskipping restores them, including after Skip all emptied the list. The source cannon and schematic are remembered per world/server, so editing another cannon does not replace an unrelated build list. Older sidecars adopt the first applied cannon. Required amounts remain on bookmark icons without an added tooltip line. The footer controls are spaced away from the divider, and the centred slots/scrollbar share a grey panel and grey search field.
 
 The 0.0.9 live client check passed on JEI 19.70.0.460 using the real skip picker and Apply packets. It covered removing a skipped material, restoring an unskipped material, Skip all, Build all after an empty list, restoring the saved source, migrating an empty older sidecar, retaining personal bookmarks, and scrolling a 67-type schematic. Button and grid positions were checked in the live menu and screenshots. All 196 base GameTests passed, and the production jar built from a separate checkout containing only the selected source changes.
@@ -22,7 +32,7 @@ Client-only capture is limited to loaded chunks and data already synchronized by
 
 ## JEI material bookmarks (NeoForge)
 
-The cannon menu has a + button next to Confirm when JEI 19.53 or newer is installed. The client uses JEI's ingredient bookmark API; JEI's API-only runtime for other recipe viewers does not activate this integration. Older JEI builds and installations without JEI retain the normal cannon screen.
+The cannon menu has a + button next to Confirm when JEI 19.53 or newer is installed and EMI is absent. The client uses JEI's ingredient bookmark API; JEI's API-only runtime for other recipe viewers does not activate this integration. Older JEI builds and installations without either supported recipe viewer retain the normal cannon screen.
 
 Better Schematics 0.0.7 is required on the server to supply the current cannon's materials. JEI itself is only needed on the client. The two new request/reply channels remain optional, so joining a server without this feature continues to work. The button is disabled with an explanatory tooltip when the server lacks these channels.
 
