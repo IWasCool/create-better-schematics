@@ -39,7 +39,8 @@ public final class CannonSkipScreen extends Screen {
     private static final int COLUMNS = 9;
     private static final int SLOT_SIZE = 18;
     private static final int PANEL_WIDTH = 214;
-    private static final int GRID_LEFT = 15;
+    private static final int CONTENT_WIDTH = COLUMNS * SLOT_SIZE + 20;
+    private static final int GRID_LEFT = (PANEL_WIDTH - CONTENT_WIDTH) / 2;
     private static final int GRID_TOP = 73;
     private static final int TEXT_COLOR = 0xeeeeee;
 
@@ -103,9 +104,12 @@ public final class CannonSkipScreen extends Screen {
         panelHeight = 159 + rows * SLOT_SIZE;
         panelLeft = (width - PANEL_WIDTH) / 2;
         panelTop = (height - panelHeight) / 2;
-        search = addRenderableWidget(new EditBox(font, panelLeft + GRID_LEFT, panelTop + 35,
-                COLUMNS * SLOT_SIZE + 20, 16, text("search")));
-        search.setHint(text("search").copy().withStyle(ChatFormatting.GRAY));
+        search = addRenderableWidget(new EditBox(font, panelLeft + GRID_LEFT + 4, panelTop + 39,
+                CONTENT_WIDTH - 8, font.lineHeight, text("search")));
+        search.setBordered(false);
+        search.setTextColor(0x404040);
+        search.setTextColorUneditable(0x707070);
+        search.setHint(text("search").copy().withStyle(ChatFormatting.DARK_GRAY));
         search.setMaxLength(128);
         blockGrid = addRenderableWidget(new BlockGrid(panelLeft + GRID_LEFT, panelTop + GRID_TOP));
         search.setValue(query);
@@ -118,7 +122,7 @@ public final class CannonSkipScreen extends Screen {
             entries.forEach(entry -> skipped.add(entry.block()));
         });
         clear = iconButton(30, panelHeight - 24, AllIcons.I_WHITELIST, text("none"), skipped::clear);
-        cancel = iconButton(158, panelHeight - 24, AllIcons.I_MTD_CLOSE, CommonComponents.GUI_CANCEL, this::onClose);
+        cancel = iconButton(150, panelHeight - 24, AllIcons.I_MTD_CLOSE, CommonComponents.GUI_CANCEL, this::onClose);
         apply = iconButton(180, panelHeight - 24, AllIcons.I_CONFIRM, text("apply"), () -> {
             if (!loaded) {
                 request();
@@ -167,6 +171,7 @@ public final class CannonSkipScreen extends Screen {
         }
         if (view.result() == Result.APPLIED) {
             minecraft.setScreen(parent);
+            CannonMaterialsClient.refreshAfterSkips(parent);
             return;
         }
         loaded = view.result() == Result.READY;
@@ -294,20 +299,36 @@ public final class CannonSkipScreen extends Screen {
         AllGuiTextures footer = AllGuiTextures.FILTER;
         graphics.blit(footer.location, panelLeft, panelTop + panelHeight - 30, footer.getStartX(),
                 footer.getStartY() + footer.getHeight() - 30, PANEL_WIDTH, 30);
+        graphics.fill(panelLeft + GRID_LEFT, panelTop + 35, panelLeft + GRID_LEFT + CONTENT_WIDTH, panelTop + 51,
+                search.isFocused() ? 0xffeeeeee : 0xff8b8b8b);
+        graphics.fill(panelLeft + GRID_LEFT + 1, panelTop + 36,
+                panelLeft + GRID_LEFT + CONTENT_WIDTH - 1, panelTop + 50, 0xffc6c6c6);
         AllGuiTextures inventory = AllGuiTextures.PLAYER_INVENTORY;
         int x = panelLeft + GRID_LEFT - 7;
         int y = panelTop + 56;
-        graphics.blit(inventory.location, x, y, 0, 0, inventory.getWidth(), 17);
+        renderInventoryStrip(graphics, inventory, x, y, 0, 17);
         for (int row = 0; row < rows; row++)
-            graphics.blit(inventory.location, x, y + 17 + row * SLOT_SIZE, 0, 17, inventory.getWidth(), SLOT_SIZE);
-        graphics.blit(inventory.location, x, y + 17 + rows * SLOT_SIZE, 0, 94, inventory.getWidth(), 14);
+            renderInventoryStrip(graphics, inventory, x, y + 17 + row * SLOT_SIZE, 17, SLOT_SIZE);
+        renderInventoryStrip(graphics, inventory, x, y + 17 + rows * SLOT_SIZE, 94, 14);
+        graphics.fill(panelLeft + GRID_LEFT, panelTop + GRID_TOP, panelLeft + GRID_LEFT + CONTENT_WIDTH,
+                panelTop + GRID_TOP + rows * SLOT_SIZE, 0xffc6c6c6);
+    }
+
+    private void renderInventoryStrip(GuiGraphics graphics, AllGuiTextures texture, int x, int y,
+                                      int sourceY, int height) {
+        // Extend Create's inventory frame to include the scrollbar, preserving its borders and pointer.
+        int fixed = texture.getWidth() - 8;
+        int width = CONTENT_WIDTH + 14;
+        graphics.blit(texture.location, x, y, 0, sourceY, fixed, height);
+        for (int column = fixed; column < width - 8; column++)
+            graphics.blit(texture.location, x + column, y, fixed - 1, sourceY, 1, height);
+        graphics.blit(texture.location, x + width - 8, y, fixed, sourceY, 8, height);
     }
 
     private final class BlockGrid extends AbstractWidget {
         private static final int SCROLL_X = 170;
         private static final int SCROLLER_HEIGHT = 15;
         private static final ResourceLocation SLOT = ResourceLocation.withDefaultNamespace("container/slot");
-        private static final ResourceLocation SCROLL_BACKGROUND = ResourceLocation.withDefaultNamespace("widget/scroller_background");
         private static final ResourceLocation SCROLLER = ResourceLocation.withDefaultNamespace("container/creative_inventory/scroller");
         private static final ResourceLocation SCROLLER_DISABLED = ResourceLocation.withDefaultNamespace("container/creative_inventory/scroller_disabled");
 
@@ -398,7 +419,9 @@ public final class CannonSkipScreen extends Screen {
                     graphics.pose().popPose();
                 }
             }
-            graphics.blitSprite(SCROLL_BACKGROUND, getX() + SCROLL_X, getY(), 12, height);
+            graphics.fill(getX() + SCROLL_X, getY(), getX() + SCROLL_X + 12, getBottom(), 0xff8b8b8b);
+            graphics.fill(getX() + SCROLL_X + 1, getY() + 1,
+                    getX() + SCROLL_X + 11, getBottom() - 1, 0xffa9a9a9);
             int thumbY = maxScrollRow() == 0 ? 0 : (height - SCROLLER_HEIGHT) * scrollRow / maxScrollRow();
             graphics.blitSprite(active && maxScrollRow() > 0 ? SCROLLER : SCROLLER_DISABLED,
                     getX() + SCROLL_X, getY() + thumbY, 12, SCROLLER_HEIGHT);

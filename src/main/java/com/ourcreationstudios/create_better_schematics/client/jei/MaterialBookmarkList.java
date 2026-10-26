@@ -17,6 +17,8 @@ public final class MaterialBookmarkList {
 
     public void clear() { entries.clear(); }
 
+    public boolean isEmpty() { return entries.isEmpty(); }
+
     public interface Bookmarks {
         boolean contains(ItemStack stack);
         boolean add(ItemStack stack);

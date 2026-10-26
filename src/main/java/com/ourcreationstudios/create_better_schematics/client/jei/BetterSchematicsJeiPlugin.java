@@ -35,7 +35,6 @@ public final class BetterSchematicsJeiPlugin implements IModPlugin {
                 @Override public boolean add(ItemStack stack) { return bookmarks.add(typed(stack)); }
                 @Override public void remove(ItemStack stack) { bookmarks.remove(typed(stack)); }
             });
-            JeiMaterials.save();
             if (!materials.isEmpty() && runtime.getBookmarkOverlay() instanceof JeiBookmarkVisibility visibility)
                 visibility.betterSchematics$showMaterialBookmarks();
         });

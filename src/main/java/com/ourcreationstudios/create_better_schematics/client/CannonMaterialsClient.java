@@ -37,6 +37,19 @@ public final class CannonMaterialsClient {
     }
 
     public static void request(SchematicannonScreen screen) {
+        request(screen, false);
+    }
+
+    public static void refreshAfterSkips(SchematicannonScreen screen) {
+        var cannon = screen.getMenu().contentHolder;
+        if (!JeiMaterials.isSource(cannon.getBlockPos(), cannon.inventory.getStackInSlot(0)) && !waiting(screen))
+            return;
+        // An earlier reply must not restore materials calculated before Apply succeeded.
+        pending = null;
+        request(screen, true);
+    }
+
+    private static void request(SchematicannonScreen screen, boolean automatic) {
         if (!JeiMaterials.available() || !serverAvailable() || waiting(screen))
             return;
         ItemStack blueprint = screen.getMenu().contentHolder.inventory.getStackInSlot(0);
@@ -44,7 +57,7 @@ public final class CannonMaterialsClient {
             return;
         int id = sequence = sequence == Integer.MAX_VALUE ? 1 : sequence + 1;
         int fingerprint = ItemStack.hashItemAndComponents(blueprint);
-        pending = new Pending(screen, id, fingerprint);
+        pending = new Pending(screen, id, fingerprint, automatic);
         PacketDistributor.sendToServer(new CannonMaterialsPackets.Request(screen.getMenu().containerId, id, fingerprint));
     }
 
@@ -62,8 +75,10 @@ public final class CannonMaterialsClient {
             return;
         }
         try {
-            JeiMaterials.upload(view.entries());
-            message(view.entries().isEmpty() ? "empty" : "success", true, view.entries().size());
+            var cannon = request.screen.getMenu().contentHolder;
+            JeiMaterials.upload(view.entries(), cannon.getBlockPos(), cannon.inventory.getStackInSlot(0));
+            if (!request.automatic)
+                message(view.entries().isEmpty() ? "empty" : "success", true, view.entries().size());
         } catch (RuntimeException exception) {
             CreateBetterSchematics.LOGGER.warn("Cannot upload cannon materials to JEI", exception);
             message("error.jei", false);
@@ -84,11 +99,13 @@ public final class CannonMaterialsClient {
         private final SchematicannonScreen screen;
         private final int id;
         private final int fingerprint;
+        private final boolean automatic;
         private int ticks;
-        private Pending(SchematicannonScreen screen, int id, int fingerprint) {
+        private Pending(SchematicannonScreen screen, int id, int fingerprint, boolean automatic) {
             this.screen = screen;
             this.id = id;
             this.fingerprint = fingerprint;
+            this.automatic = automatic;
         }
     }
 }

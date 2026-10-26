@@ -1,5 +1,6 @@
 package com.ourcreationstudios.create_better_schematics.mixin.client;
 
+import java.util.List;
 import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipAccess;
 import com.ourcreationstudios.create_better_schematics.client.CannonSkipScreen;
@@ -29,6 +30,8 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
 
     @Unique private IconButton betterSchematics$jeiButton;
     @Shadow protected IconButton skipMissingButton;
+    @Shadow protected IconButton skipBlockEntitiesButton;
+    @Shadow protected List<IconButton> replaceLevelButtons;
     @Shadow protected abstract boolean placementSettingsHidden();
 
     @Inject(method = "init", at = @At("RETURN"), remap = false)
@@ -36,7 +39,7 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
         betterSchematics$jeiButton = null;
         if (!JeiMaterials.supportedVersion())
             return;
-        betterSchematics$jeiButton = new IconButton(leftPos + 156, topPos + 111, AllIcons.I_ADD);
+        betterSchematics$jeiButton = new IconButton(leftPos + 150, topPos + 111, AllIcons.I_ADD);
         betterSchematics$jeiButton.withCallback(() -> CannonMaterialsClient.request((SchematicannonScreen) (Object) this));
         betterSchematics$jeiButton.setMessage(CannonMaterialsClient.text("button"));
         addRenderableWidget(betterSchematics$jeiButton);
@@ -67,6 +70,12 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
 
     @Inject(method = "initPlacementSettings", at = @At("RETURN"), remap = false)
     private void betterSchematics$openSkipPicker(CallbackInfo ci) {
+        if (!placementSettingsHidden() && betterSchematics$jeiButton != null) {
+            for (int index = 0; index < replaceLevelButtons.size(); index++)
+                replaceLevelButtons.get(index).setX(leftPos + 30 + index * 18);
+            skipMissingButton.setX(leftPos + 106);
+            skipBlockEntitiesButton.setX(leftPos + 128);
+        }
         if (CannonSkipScreen.supportsServer() && !placementSettingsHidden() && skipMissingButton != null)
             skipMissingButton.withCallback(() -> CannonSkipScreen.open((SchematicannonScreen) (Object) this));
     }

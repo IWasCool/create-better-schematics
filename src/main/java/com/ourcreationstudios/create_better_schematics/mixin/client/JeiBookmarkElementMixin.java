@@ -1,16 +1,10 @@
 package com.ourcreationstudios.create_better_schematics.mixin.client;
 
-import java.text.NumberFormat;
 import java.util.Locale;
-import com.ourcreationstudios.create_better_schematics.client.CannonMaterialsClient;
 import com.ourcreationstudios.create_better_schematics.client.jei.JeiMaterials;
 import mezz.jei.api.constants.VanillaTypes;
-import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.ingredients.IIngredientHelper;
-import mezz.jei.api.ingredients.IIngredientRenderer;
 import mezz.jei.api.ingredients.ITypedIngredient;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
@@ -18,9 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Pseudo
@@ -59,13 +51,4 @@ abstract class JeiBookmarkElementMixin {
         });
     }
 
-    @Inject(method = "getTooltip", at = @At("RETURN"), remap = false)
-    private void betterSchematics$explainRequiredAmount(@Coerce ITooltipBuilder tooltip, @Coerce Object tooltipHelper,
-            IIngredientRenderer<?> renderer, IIngredientHelper<?> helper, CallbackInfo ci) {
-        ItemStack stack = getTypedIngredient().getIngredient(VanillaTypes.ITEM_STACK).orElse(ItemStack.EMPTY);
-        int count = stack.isEmpty() ? 0 : JeiMaterials.count(stack);
-        if (count > 0)
-            tooltip.add(CannonMaterialsClient.text("quantity", NumberFormat.getIntegerInstance().format(count))
-                    .copy().withStyle(ChatFormatting.GREEN));
-    }
 }

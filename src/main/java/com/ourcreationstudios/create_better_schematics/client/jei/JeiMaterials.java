@@ -12,8 +12,11 @@ import java.util.function.Consumer;
 import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonMaterial;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.LevelResource;
 import net.neoforged.fml.ModList;
@@ -24,6 +27,9 @@ public final class JeiMaterials {
     private static final MaterialBookmarkList quantities = new MaterialBookmarkList();
     private static Consumer<List<CannonMaterial>> importer;
     private static Path file;
+    private static BlockPos sourceCannon;
+    private static ItemStack sourceSchematic = ItemStack.EMPTY;
+    private static boolean imported;
 
     private JeiMaterials() {}
 
@@ -51,7 +57,13 @@ public final class JeiMaterials {
         file = minecraft.gameDirectory.toPath().resolve("config/create_better_schematics/jei-materials/" + id + ".nbt");
         if (Files.isRegularFile(file)) {
             try {
-                quantities.read(NbtIo.readCompressed(file, NbtAccounter.create(16 * 1024 * 1024L)), minecraft.level.registryAccess());
+                CompoundTag data = NbtIo.readCompressed(file, NbtAccounter.create(16 * 1024 * 1024L));
+                quantities.read(data, minecraft.level.registryAccess());
+                imported = data.getInt("Version") == 1;
+                sourceCannon = NbtUtils.readBlockPos(data, "Cannon").orElse(null);
+                if (data.contains("Schematic"))
+                    sourceSchematic = ItemStack.parse(minecraft.level.registryAccess(), data.getCompound("Schematic"))
+                            .orElse(ItemStack.EMPTY);
             } catch (IOException | RuntimeException exception) {
                 CreateBetterSchematics.LOGGER.warn("Cannot restore JEI material quantities", exception);
             }
@@ -63,13 +75,26 @@ public final class JeiMaterials {
         importer = null;
         file = null;
         quantities.clear();
+        sourceCannon = null;
+        sourceSchematic = ItemStack.EMPTY;
+        imported = false;
         com.ourcreationstudios.create_better_schematics.client.CannonMaterialsClient.clearPending();
     }
 
-    public static void upload(List<CannonMaterial> materials) {
+    public static void upload(List<CannonMaterial> materials, BlockPos cannon, ItemStack schematic) {
         if (importer == null)
             throw new IllegalStateException("JEI bookmarks are not available");
         importer.accept(materials);
+        sourceCannon = cannon.immutable();
+        sourceSchematic = schematic.copyWithCount(1);
+        imported = true;
+        save();
+    }
+
+    public static boolean isSource(BlockPos cannon, ItemStack schematic) {
+        // Older sidecars did not record their source. Adopt the first applied cannon once.
+        return sourceCannon == null ? imported
+                : sourceCannon.equals(cannon) && ItemStack.isSameItemSameComponents(sourceSchematic, schematic);
     }
 
     public static MaterialBookmarkList quantities() { return quantities; }
@@ -83,7 +108,12 @@ public final class JeiMaterials {
         try {
             Files.createDirectories(file.getParent());
             temporary = Files.createTempFile(file.getParent(), "materials-", ".tmp");
-            NbtIo.writeCompressed(quantities.write(Minecraft.getInstance().level.registryAccess()), temporary);
+            CompoundTag data = quantities.write(Minecraft.getInstance().level.registryAccess());
+            if (sourceCannon != null && !sourceSchematic.isEmpty()) {
+                data.put("Cannon", NbtUtils.writeBlockPos(sourceCannon));
+                data.put("Schematic", sourceSchematic.save(Minecraft.getInstance().level.registryAccess()));
+            }
+            NbtIo.writeCompressed(data, temporary);
             try {
                 Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
             } catch (AtomicMoveNotSupportedException unsupported) {

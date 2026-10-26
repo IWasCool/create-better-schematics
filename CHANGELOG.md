@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.9 — NeoForge 1.21.1
+
+- Automatically update an imported JEI build list when skip choices are applied. Skipped materials disappear and unskipped materials return, including after Skip all.
+- Remember the source cannon and schematic with the saved material list. Applying skips to another cannon leaves the imported build list alone.
+- Remove the extra required-material tooltip line; bookmark icons retain their quantities.
+- Move the + and Cancel buttons away from the footer divider and adjust the cannon settings to fit.
+- Centre the slot grid and scrollbar together inside the Schematic blocks panel. Use grey backgrounds for the scrollbar and search field.
+
+Requires the same Minecraft, Create, NeoForge, and optional JEI versions as 0.0.8. The skip-sync change is on the NeoForge client and works with the existing server material channels. Forge/Fabric companions remain at 0.0.7.
+
+Validation: 196 base GameTests and a live JEI 19.70.0.460 test covering Apply, Skip all, Build all, saved/legacy material lists, personal bookmarks, button spacing, and a scrolling 67-type block table.
+
 ## 0.0.8 — NeoForge 1.21.1
 
 - Copy connected Create Aeronautics: Transmission & Linkage universal joints, including andesite and brass rods, rotation, mirroring, and saved cannon projectiles. Include both endpoints in the schematic. Each connection requires one rod.
