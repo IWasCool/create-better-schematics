@@ -8,7 +8,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.DyeColor;
 
-/** Create 6's 1.20 attribute NBT and 1.21 attribute codecs use different field names. */
+/** Version-neutral NBT bridge for Create 6's 1.20 and 1.21 attribute filters. */
 public final class AttributeFilterCompatibility {
     public static final String RULES = "create:attribute_filter_matched_attributes";
     public static final String MODE = "create:attribute_filter_whitelist_mode";

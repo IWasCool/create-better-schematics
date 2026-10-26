@@ -1,7 +1,7 @@
 package com.ourcreationstudios.create_better_schematics;
 
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipPackets;
-import com.ourcreationstudios.create_better_schematics.factory.FactoryGaugeSchematicProcessor;
+import com.ourcreationstudios.create_better_schematics.cannon.CannonMaterialsPackets;
 import com.ourcreationstudios.create_better_schematics.compat.PowerGridWires;
 import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
@@ -17,7 +17,7 @@ public final class CreateBetterSchematics {
     public CreateBetterSchematics(IEventBus modEventBus) {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(CannonSkipPackets::register);
-        FactoryGaugeSchematicProcessor.TYPES.register(modEventBus);
+        modEventBus.addListener(CannonMaterialsPackets::register);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

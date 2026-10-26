@@ -3,6 +3,8 @@ package com.ourcreationstudios.create_better_schematics.compat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -16,11 +18,12 @@ public final class SchematicFileFormat {
 
     private SchematicFileFormat() {}
 
-    /** Adds provenance without changing the native DataVersion, palette, blocks or entities. */
+    /** Adds optional provenance and native item equivalents without changing DataVersion. */
     public static CompoundTag markExport(CompoundTag source, String loader) {
-        CompoundTag result = source.copy();
+        CompoundTag result = nativeCopy(source);
         if (!result.contains("blocks", Tag.TAG_LIST) || result.getList("size", Tag.TAG_INT).size() != 3)
             return result;
+        PortableItemComponents.supplement(result);
         CompoundTag metadata = result.getCompound(METADATA).copy();
         metadata.putInt("FormatVersion", VERSION);
         if (!metadata.contains("SourceDataVersion", Tag.TAG_ANY_NUMERIC))
@@ -33,10 +36,54 @@ public final class SchematicFileFormat {
 
     /** The 1.20.1 companions adapt an in-memory copy; the shared source file stays native. */
     public static CompoundTag forLegacyReader(CompoundTag source, boolean fabric) throws IOException {
-        CompoundTag result = source.copy();
+        CompoundTag result = nativeCopy(source);
         convert(result, fabric, 0);
         if (result.getInt("DataVersion") > 3465)
             result.putInt("DataVersion", 3465);
+        return result;
+    }
+
+    /** Migrate the old addon-only belt property into Create's own block entity NBT. */
+    public static CompoundTag nativeCopy(CompoundTag source) {
+        CompoundTag result = source.copy();
+        List<ListTag> palettes = new ArrayList<>();
+        for (Tag entry : result.getList("palettes", Tag.TAG_LIST))
+            palettes.add((ListTag) entry);
+        if (palettes.isEmpty())
+            palettes.add(result.getList("palette", Tag.TAG_COMPOUND));
+        Map<Integer, String> materials = new HashMap<>();
+        boolean first = true;
+        for (ListTag palette : palettes) {
+            Map<Integer, String> variant = new HashMap<>();
+            for (int index = 0; index < palette.size(); index++) {
+                CompoundTag state = palette.getCompound(index);
+                if (!state.getString("Name").equals("create:belt"))
+                    continue;
+                CompoundTag properties = state.getCompound("Properties");
+                String material = properties.getString("create_better_schematics_casing");
+                properties.remove("create_better_schematics_casing");
+                if (properties.getString("casing").equals("true")
+                        && (material.equals("andesite") || material.equals("brass")))
+                    variant.put(index, material.toUpperCase(java.util.Locale.ROOT));
+            }
+            if (first)
+                materials.putAll(variant);
+            else
+                // Alternate palettes share block NBT: do not invent a material
+                // when two variants describe different casings for the same index.
+                materials.entrySet().removeIf(entry -> !entry.getValue().equals(variant.get(entry.getKey())));
+            first = false;
+        }
+        for (Tag entry : result.getList("blocks", Tag.TAG_COMPOUND)) {
+            CompoundTag block = (CompoundTag) entry;
+            String material = materials.get(block.getInt("state"));
+            if (material == null)
+                continue;
+            CompoundTag nbt = block.getCompound("nbt");
+            nbt.putString("id", "create:belt");
+            nbt.putString("Casing", material);
+            block.put("nbt", nbt);
+        }
         return result;
     }
 

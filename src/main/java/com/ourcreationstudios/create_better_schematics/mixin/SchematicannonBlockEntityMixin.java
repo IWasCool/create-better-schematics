@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -19,6 +20,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = SchematicannonBlockEntity.class, remap = false)
 abstract class SchematicannonBlockEntityMixin implements CannonSkipAccess {
     @Unique private final CannonSkipSettings betterSchematics$skips = new CannonSkipSettings();
+    @Shadow protected abstract boolean shouldPlace(BlockPos pos, BlockState state, BlockEntity entity,
+            BlockState toReplace, BlockState other, boolean normalCube);
+
+    @Override
+    public boolean betterSchematics$shouldPlace(BlockPos pos, BlockState state, BlockEntity entity,
+            BlockState toReplace, BlockState other, boolean normalCube) {
+        return shouldPlace(pos, state, entity, toReplace, other, normalCube);
+    }
 
     @Override
     public CannonSkipSettings betterSchematics$getSkipSettings() {

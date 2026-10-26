@@ -71,9 +71,18 @@ public final class CannonSkipScreen extends Screen {
     }
 
     public static void open(SchematicannonScreen parent) {
+        if (!supportsServer())
+            return;
         CannonSkipScreen screen = new CannonSkipScreen(parent);
         Minecraft.getInstance().setScreen(screen);
         screen.request();
+    }
+
+    public static boolean supportsServer() {
+        var connection = Minecraft.getInstance().getConnection();
+        return connection != null && connection.hasChannel(CannonSkipPackets.Request.TYPE)
+                && connection.hasChannel(CannonSkipPackets.Save.TYPE)
+                && connection.hasChannel(CannonSkipPackets.View.TYPE);
     }
 
     public static void receive(View packet) {

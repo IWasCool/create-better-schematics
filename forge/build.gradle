@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.ourcreationstudios.create_better_schematics'
-version = '0.0.5'
+version = '0.0.7'
 base.archivesName = 'create_better_schematics-forge-1.20.1'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 sourceSets.main.java.srcDir('../common/src/main/java')
@@ -38,6 +38,7 @@ legacyForge {
         client {
             client()
             loadedMods = [mods.create_better_schematics]
+            programArguments.addAll(['--mixin.config', 'create_better_schematics_forge.mixins.json'])
         }
         gameTestServer {
             type = 'gameTestServer'
@@ -64,7 +65,6 @@ if (providers.gradleProperty('compatTests').isPresent()) {
 }
 mixin {
     add sourceSets.main, 'create_better_schematics_forge.refmap.json'
-    config 'create_better_schematics_forge.mixins.json'
 }
 tasks.named('jar', Jar) {
     manifest.attributes('MixinConfigs': 'create_better_schematics_forge.mixins.json')

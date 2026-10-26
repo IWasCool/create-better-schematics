@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'com.ourcreationstudios.create_better_schematics'
-version = '0.0.5'
+version = '0.0.7'
 base.archivesName = 'create_better_schematics-fabric-1.20.1'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 sourceSets.main.java.srcDir('../compatibility/src/main/java')

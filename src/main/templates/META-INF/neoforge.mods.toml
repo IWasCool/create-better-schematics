@@ -18,7 +18,8 @@ authors="Izcool"
 
 description='''
 Preserves Create schematic machine settings, Factory Gauge setups, filters, mechanical arm targets, and belt casings.
-Adds Power Grid wire copying and addon configuration profiles, including schematic transfers between Forge 1.20.1 and NeoForge 1.21.1.
+Adds selective Schematicannon building, JEI material bookmarks, Power Grid wires, and Transmission & Linkage universal-joint rods.
+Supports addon configuration profiles and schematic transfers between Forge 1.20.1 and NeoForge 1.21.1.
 '''
 
 [[mixins]]

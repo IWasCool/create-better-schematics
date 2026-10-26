@@ -2,10 +2,9 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.ourcreationstudios.create_better_schematics.mixin",
+  "plugin": "com.ourcreationstudios.create_better_schematics.mixin.JeiMixinPlugin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BeltBlockMixin",
-    "BeltBlockEntityMixin",
     "ArmBlockEntityMixin",
     "SchematicItemMixin",
     "SchematicExportMixin",
@@ -15,12 +14,13 @@
     "AddonBlockEntityDataMixin",
     "AddonMaterialRequirementMixin",
     "NewAgeEnergiserMixin",
+    "TransmissionJointBlockEntityMixin",
     "SchematicPrinterWireMixin",
     "SchematicannonWireMaterialsMixin",
     "StructureTemplateAccessor",
     "SchematicannonBlockEntityMixin"
   ],
-  "client": ["client.SchematicannonScreenMixin"],
+  "client": ["client.SchematicannonScreenMixin", "client.JeiBookmarkElementMixin", "client.JeiBookmarkOverlayMixin", "client.TransmissionToolgunNoticeMixin"],
   "injectors": {
     "defaultRequire": 1
   }

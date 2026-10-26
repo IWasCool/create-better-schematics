@@ -4,6 +4,6 @@
   "package": "com.ourcreationstudios.create_better_schematics.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "create_better_schematics_fabric.refmap.json",
-  "mixins": ["ArmBlockEntityMixin", "ThresholdSwitchBlockEntityMixin", "SchematicItemMixin", "SchematicExportMixin"],
+  "mixins": ["ArmBlockEntityMixin", "ThresholdSwitchBlockEntityMixin", "SchematicItemMixin", "SchematicExportMixin", "BeltBlockEntityDataMixin"],
   "injectors": {"defaultRequire": 1}
 }

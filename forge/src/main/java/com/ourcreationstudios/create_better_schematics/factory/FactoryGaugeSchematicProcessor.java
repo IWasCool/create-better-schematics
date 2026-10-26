@@ -1,24 +1,19 @@
 package com.ourcreationstudios.create_better_schematics.factory;
 
 import com.mojang.serialization.Codec;
-import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.compat.PowerGridWirePlacement;
 import com.ourcreationstudios.create_better_schematics.compat.AddonConfigurationPlacement;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraftforge.registries.DeferredRegister;
 
 public final class FactoryGaugeSchematicProcessor extends StructureProcessor {
-    public static final DeferredRegister<StructureProcessorType<?>> TYPES = DeferredRegister.create(
-            Registries.STRUCTURE_PROCESSOR, CreateBetterSchematics.MODID);
     private static final Codec<FactoryGaugeSchematicProcessor> CODEC = Codec.unit(FactoryGaugeSchematicProcessor::new);
-    private static final java.util.function.Supplier<StructureProcessorType<FactoryGaugeSchematicProcessor>> TYPE =
-            TYPES.register("factory_gauge_connections", () -> () -> CODEC);
+    // This runtime-only processor does not add a registry entry required by peers.
+    private static final StructureProcessorType<FactoryGaugeSchematicProcessor> TYPE = () -> CODEC;
     private final FactoryGaugePlacement placement = new FactoryGaugePlacement();
     private final PowerGridWirePlacement wires = new PowerGridWirePlacement(true);
 
@@ -38,6 +33,6 @@ public final class FactoryGaugeSchematicProcessor extends StructureProcessor {
 
     @Override
     protected StructureProcessorType<?> getType() {
-        return TYPE.get();
+        return TYPE;
     }
 }

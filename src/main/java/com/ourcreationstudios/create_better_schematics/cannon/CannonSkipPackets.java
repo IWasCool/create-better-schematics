@@ -23,7 +23,8 @@ public final class CannonSkipPackets {
     private CannonSkipPackets() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1");
+        // Saving schematics is local; only the optional cannon picker needs a peer.
+        var registrar = event.registrar("2").optional();
         registrar.playToServer(Request.TYPE, Request.CODEC, (packet, context) -> {
             if (context.player() instanceof ServerPlayer player) {
                 var cannon = CannonSkipService.openCannon(player, packet.menuId());

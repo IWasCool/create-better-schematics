@@ -25,7 +25,7 @@ public final class SchematicDataCompatibility {
     private SchematicDataCompatibility() {}
 
     public static CompoundTag importSchematic(CompoundTag schematic) {
-        return convert(schematic.copy(), false, 0);
+        return convert(SchematicFileFormat.nativeCopy(schematic), false, 0);
     }
 
     public static CompoundTag exportSchematic(CompoundTag schematic) {
