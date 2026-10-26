@@ -122,8 +122,8 @@ public final class CannonSkipScreen extends Screen {
             entries.forEach(entry -> skipped.add(entry.block()));
         });
         clear = iconButton(30, panelHeight - 24, AllIcons.I_WHITELIST, text("none"), skipped::clear);
-        cancel = iconButton(150, panelHeight - 24, AllIcons.I_MTD_CLOSE, CommonComponents.GUI_CANCEL, this::onClose);
-        apply = iconButton(180, panelHeight - 24, AllIcons.I_CONFIRM, text("apply"), () -> {
+        cancel = iconButton(153, panelHeight - 24, AllIcons.I_MTD_CLOSE, CommonComponents.GUI_CANCEL, this::onClose);
+        apply = iconButton(181, panelHeight - 24, AllIcons.I_CONFIRM, text("apply"), () -> {
             if (!loaded) {
                 request();
                 return;

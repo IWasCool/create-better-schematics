@@ -39,7 +39,7 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
         betterSchematics$jeiButton = null;
         if (!JeiMaterials.supportedVersion())
             return;
-        betterSchematics$jeiButton = new IconButton(leftPos + 150, topPos + 111, AllIcons.I_ADD);
+        betterSchematics$jeiButton = new IconButton(leftPos + 152, topPos + 111, AllIcons.I_ADD);
         betterSchematics$jeiButton.withCallback(() -> CannonMaterialsClient.request((SchematicannonScreen) (Object) this));
         betterSchematics$jeiButton.setMessage(CannonMaterialsClient.text("button"));
         addRenderableWidget(betterSchematics$jeiButton);
