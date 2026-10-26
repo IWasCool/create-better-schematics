@@ -63,10 +63,11 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
                 && schematic && !waiting;
         String hint = CannonMaterialsClient.needsEmiAddon() ? "needs_addon"
                 : !CannonMaterialsClient.exportAvailable() ? "unavailable" : !CannonMaterialsClient.serverAvailable()
-                ? "needs_server" : !schematic ? "needs_schematic" : waiting ? "loading" : "help";
+                ? "needs_server" : !schematic ? "needs_schematic" : waiting ? "loading" : null;
         betterSchematics$materialsButton.setToolTip(CannonMaterialsClient.text("button"));
-        betterSchematics$materialsButton.getToolTip().add(CannonMaterialsClient.text(hint));
-        if (CannonMaterialsClient.usesEmi())
+        if (hint != null)
+            betterSchematics$materialsButton.getToolTip().add(CannonMaterialsClient.text(hint));
+        if (CannonMaterialsClient.needsEmiAddon())
             betterSchematics$materialsButton.getToolTip().add(CannonMaterialsClient.text("required"));
     }
 
@@ -78,8 +79,10 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
             skipMissingButton.setX(leftPos + 106);
             skipBlockEntitiesButton.setX(leftPos + 128);
         }
-        if (CannonSkipScreen.supportsServer() && !placementSettingsHidden() && skipMissingButton != null)
+        if (CannonSkipScreen.supportsServer() && !placementSettingsHidden() && skipMissingButton != null) {
             skipMissingButton.withCallback(() -> CannonSkipScreen.open((SchematicannonScreen) (Object) this));
+            skipMissingButton.setToolTip(Component.translatable(CreateBetterSchematics.MODID + ".cannon.skip.title"));
+        }
     }
 
     @Inject(method = "containerTick", at = @At("RETURN"), remap = false)
@@ -90,6 +93,5 @@ abstract class SchematicannonScreenMixin extends AbstractSimiContainerScreen<Sch
         int selected = ((CannonSkipAccess) cannon).betterSchematics$getSkipSettings().skipped().size();
         skipMissingButton.green = selected > 0 || cannon.skipMissing;
         skipMissingButton.setToolTip(Component.translatable(CreateBetterSchematics.MODID + ".cannon.skip.title"));
-        skipMissingButton.getToolTip().add(Component.translatable(CreateBetterSchematics.MODID + ".cannon.skip.button_help", selected));
     }
 }

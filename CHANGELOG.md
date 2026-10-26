@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.11 — NeoForge 1.21.1
+
+- Group normal, andesite-encased and brass-encased shafts/cogwheels by their actual obtainable item in the picker, with combined block counts. Encased/glass pipes use Fluid Pipe and belts use Mechanical Belt.
+- Retain original block IDs when applying a grouped skip, so all represented variants are excluded from construction and the exported JEI/EMI material list. Existing partial variant skips remain visible and are preserved until toggled.
+- Keep using Create's native item requirements for actual exported quantities, including the belt connector/pulley costs and composite blocks.
+- Remove routine extra help lines from the added buttons. Missing EMI addon/server requirements still explain a disabled export button.
+- Restore the original inventory frame and search-field textures. Keep the centered layout and grey only behind the scrollbar.
+
+This is a NeoForge client update; the existing server material and skip channels remain compatible. EMI export still exclusively requires and delegates to EMI: Create Schematics. Forge/Fabric companions remain at 0.0.7.
+
+Validation: 197 base GameTests; a live JEI 19.70.0.460 check with encased shafts/cogs/pipes, grouped skips, restored materials, button tooltips and a scrolling 71-group picker; and live EMI 1.1.24 / EMI: Create Schematics 1.1.0 export and missing-addon checks with JEI also installed. The restored menu textures were inspected in the rendered screen.
+
 ## 0.0.10 — NeoForge 1.21.1
 
 - Show **Send materials to EMI** when EMI is installed, with a tooltip requiring and crediting **EMI: Create Schematics** by LiukRast and swzo.

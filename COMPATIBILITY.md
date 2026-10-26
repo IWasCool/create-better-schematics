@@ -1,5 +1,15 @@
 # Addon schematic compatibility
 
+## Obtainable items in the picker (NeoForge 0.0.11)
+
+The picker now uses Create's single-item requirements to group encased shafts, small/large cogwheels, encased pipes and glass pipes under their obtainable item. Counts combine the represented schematic blocks. Belts use the Mechanical Belt item name/icon. Actual exported quantities continue to use the full native requirements, including belt connectors, pulley shafts and composite requirements such as a shaft plus metal girder; a decorative casing does not become a separate hidden item requirement.
+
+Only the client presentation is grouped. Apply still sends each represented original block type through the existing validated skip protocol. Choosing a group skips/unskips all its variants, and the active JEI or delegated EMI export refreshes as before. Existing selections affecting only some variants stay intact and show an amber partial state. Search accepts both the obtainable item and the original block names/IDs. Composite or unavailable addon requirements keep a separate block row rather than guessing their item costs.
+
+Working added buttons show their action name without routine extra help lines. Disabled exports retain their missing dependency/server explanation, including the EMI: Create Schematics requirement. The original Create inventory and Minecraft search textures are restored; only the scrollbar track has a grey fill. The grid and scrollbar remain centered together, with the previously fixed footer spacing.
+
+October 26, 2026 validation: 197 base GameTests passed. A debugger probe confirmed that the real Create requirements produce obtainable shafts, cogs, pipes and belt connectors rather than internal encased items, retaining the additional girder cost for a composite shaft. A live JEI 19.70.0.460 test verified three variants merging into each shaft/cog/pipe group, their exact exported quantities, excluding all shaft variants after Apply, restoring them after Build all, single-line working-button tooltips and a scrolling 71-group picker. A live EMI 1.1.24 / EMI: Create Schematics 1.1.0 test passed the corresponding export and grouped-skip checks with JEI also installed. The missing-addon setup still disabled export and named the requirement. The rendered picker was inspected to verify the original frame/search textures and grey scrollbar track. New tests and generated evidence remain local.
+
 ## EMI material export (NeoForge 0.0.10)
 
 When EMI is installed, the cannon's + button is labelled **Send materials to EMI**. It requires the separate [EMI: Create Schematics](https://modrinth.com/mod/emi-create-schematics) addon by **LiukRast and swzo**, version 1.1.0 or newer. A small optional bridge turns the server's material list into Create clipboard entries and invokes the addon's public `ClipboardScreenUtils.load` method, the same method its clipboard button uses. All EMI favourites, quantity display, replacement and persistence belong to that addon. Better Schematics includes no EMI exporter implementation, EMI API dependency or bundled addon.

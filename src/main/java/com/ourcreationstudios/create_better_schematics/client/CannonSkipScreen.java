@@ -47,6 +47,7 @@ public final class CannonSkipScreen extends Screen {
     private final SchematicannonScreen parent;
     private final Set<Block> skipped = new HashSet<>();
     private List<BlockEntry> entries = List.of();
+    private List<CannonBlockGroup> groups = List.of();
     private int fingerprint;
     private boolean loaded;
     private boolean saving;
@@ -104,12 +105,9 @@ public final class CannonSkipScreen extends Screen {
         panelHeight = 159 + rows * SLOT_SIZE;
         panelLeft = (width - PANEL_WIDTH) / 2;
         panelTop = (height - panelHeight) / 2;
-        search = addRenderableWidget(new EditBox(font, panelLeft + GRID_LEFT + 4, panelTop + 39,
-                CONTENT_WIDTH - 8, font.lineHeight, text("search")));
-        search.setBordered(false);
-        search.setTextColor(0x404040);
-        search.setTextColorUneditable(0x707070);
-        search.setHint(text("search").copy().withStyle(ChatFormatting.DARK_GRAY));
+        search = addRenderableWidget(new EditBox(font, panelLeft + GRID_LEFT, panelTop + 35,
+                CONTENT_WIDTH, 16, text("search")));
+        search.setHint(text("search").copy().withStyle(ChatFormatting.GRAY));
         search.setMaxLength(128);
         blockGrid = addRenderableWidget(new BlockGrid(panelLeft + GRID_LEFT, panelTop + GRID_TOP));
         search.setValue(query);
@@ -178,8 +176,9 @@ public final class CannonSkipScreen extends Screen {
         if (loaded) {
             fingerprint = view.fingerprint();
             entries = new ArrayList<>(view.entries());
-            entries.sort(Comparator.comparing((BlockEntry entry) -> entry.block().getName().getString(),
-                    String.CASE_INSENSITIVE_ORDER).thenComparing(entry -> BuiltInRegistries.BLOCK.getKey(entry.block())));
+            groups = CannonBlockGroup.group(entries).stream()
+                    .sorted(Comparator.comparing((CannonBlockGroup group) -> group.name().getString(),
+                            String.CASE_INSENSITIVE_ORDER).thenComparing(CannonBlockGroup::id)).toList();
             skipped.clear();
             entries.stream().filter(BlockEntry::skipped).forEach(entry -> skipped.add(entry.block()));
             skipMissing = view.skipMissing();
@@ -202,8 +201,6 @@ public final class CannonSkipScreen extends Screen {
         missing.setMessage(text("missing_narration", text(skipMissing ? "enabled" : "disabled")));
         missing.getToolTip().clear();
         missing.getToolTip().add(text("skip_missing"));
-        missing.getToolTip().add(text(skipMissing ? "enabled" : "disabled").copy()
-                .withStyle(skipMissing ? ChatFormatting.GREEN : ChatFormatting.GRAY));
         search.active = loaded && !saving;
         blockGrid.active = loaded && !saving;
         cancel.active = !saving;
@@ -213,9 +210,11 @@ public final class CannonSkipScreen extends Screen {
         if (blockGrid == null)
             return;
         String query = search.getValue().strip().toLowerCase(Locale.ROOT);
-        blockGrid.populate(entries.stream().filter(entry -> query.isEmpty()
-                || entry.block().getName().getString().toLowerCase(Locale.ROOT).contains(query)
-                || BuiltInRegistries.BLOCK.getKey(entry.block()).toString().contains(query)).toList());
+        blockGrid.populate(groups.stream().filter(group -> query.isEmpty()
+                || group.name().getString().toLowerCase(Locale.ROOT).contains(query)
+                || group.id().toString().contains(query)
+                || group.variants().stream().anyMatch(entry -> entry.block().getName().getString().toLowerCase(Locale.ROOT).contains(query)
+                        || BuiltInRegistries.BLOCK.getKey(entry.block()).toString().contains(query))).toList());
     }
 
     @Override
@@ -250,7 +249,7 @@ public final class CannonSkipScreen extends Screen {
                 panelTop + 4, AllGuiTextures.FONT_COLOR, false);
         graphics.drawString(font, text("description"), panelLeft + 8, panelTop + 20, TEXT_COLOR);
         graphics.drawString(font, text("inventory"), panelLeft + GRID_LEFT + 1, panelTop + 62, 0x404040, false);
-        graphics.drawString(font, text("summary", skipped.size(), entries.size()),
+        graphics.drawString(font, text("summary", groups.stream().filter(group -> group.skipped(skipped)).count(), groups.size()),
                 panelLeft + GRID_LEFT, panelTop + panelHeight - 67, TEXT_COLOR);
         graphics.drawString(font, text("skip_missing"), panelLeft + 31, panelTop + panelHeight - 47,
                 missing.active ? TEXT_COLOR : 0xa0a0a0);
@@ -272,14 +271,14 @@ public final class CannonSkipScreen extends Screen {
                 y += font.lineHeight;
             }
         }
-        BlockEntry hovered = blockGrid.entryAt(mouseX, mouseY);
+        CannonBlockGroup hovered = blockGrid.entryAt(mouseX, mouseY);
         if (hovered != null && loaded && !saving) {
-            boolean excluded = skipped.contains(hovered.block());
-            graphics.renderComponentTooltip(font, List.of(hovered.block().getName(),
-                    Component.literal(BuiltInRegistries.BLOCK.getKey(hovered.block()).toString())
+            boolean excluded = hovered.skipped(skipped);
+            graphics.renderComponentTooltip(font, List.of(hovered.name(),
+                    Component.literal(hovered.id().toString())
                             .withStyle(ChatFormatting.DARK_GRAY),
                     text("count", hovered.count()).copy().withStyle(ChatFormatting.GRAY),
-                    text(excluded ? "state.skipped" : "state.build").copy()
+                    text(hovered.partiallySkipped(skipped) ? "state.partial" : excluded ? "state.skipped" : "state.build").copy()
                             .withStyle(excluded ? ChatFormatting.RED : ChatFormatting.GREEN),
                     text("row_help").copy().withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
         } else if (loaded && mouseX >= panelLeft + GRID_LEFT && mouseX < panelLeft + 198
@@ -299,30 +298,13 @@ public final class CannonSkipScreen extends Screen {
         AllGuiTextures footer = AllGuiTextures.FILTER;
         graphics.blit(footer.location, panelLeft, panelTop + panelHeight - 30, footer.getStartX(),
                 footer.getStartY() + footer.getHeight() - 30, PANEL_WIDTH, 30);
-        graphics.fill(panelLeft + GRID_LEFT, panelTop + 35, panelLeft + GRID_LEFT + CONTENT_WIDTH, panelTop + 51,
-                search.isFocused() ? 0xffeeeeee : 0xff8b8b8b);
-        graphics.fill(panelLeft + GRID_LEFT + 1, panelTop + 36,
-                panelLeft + GRID_LEFT + CONTENT_WIDTH - 1, panelTop + 50, 0xffc6c6c6);
         AllGuiTextures inventory = AllGuiTextures.PLAYER_INVENTORY;
         int x = panelLeft + GRID_LEFT - 7;
         int y = panelTop + 56;
-        renderInventoryStrip(graphics, inventory, x, y, 0, 17);
+        graphics.blit(inventory.location, x, y, 0, 0, inventory.getWidth(), 17);
         for (int row = 0; row < rows; row++)
-            renderInventoryStrip(graphics, inventory, x, y + 17 + row * SLOT_SIZE, 17, SLOT_SIZE);
-        renderInventoryStrip(graphics, inventory, x, y + 17 + rows * SLOT_SIZE, 94, 14);
-        graphics.fill(panelLeft + GRID_LEFT, panelTop + GRID_TOP, panelLeft + GRID_LEFT + CONTENT_WIDTH,
-                panelTop + GRID_TOP + rows * SLOT_SIZE, 0xffc6c6c6);
-    }
-
-    private void renderInventoryStrip(GuiGraphics graphics, AllGuiTextures texture, int x, int y,
-                                      int sourceY, int height) {
-        // Extend Create's inventory frame to include the scrollbar, preserving its borders and pointer.
-        int fixed = texture.getWidth() - 8;
-        int width = CONTENT_WIDTH + 14;
-        graphics.blit(texture.location, x, y, 0, sourceY, fixed, height);
-        for (int column = fixed; column < width - 8; column++)
-            graphics.blit(texture.location, x + column, y, fixed - 1, sourceY, 1, height);
-        graphics.blit(texture.location, x + width - 8, y, fixed, sourceY, 8, height);
+            graphics.blit(inventory.location, x, y + 17 + row * SLOT_SIZE, 0, 17, inventory.getWidth(), SLOT_SIZE);
+        graphics.blit(inventory.location, x, y + 17 + rows * SLOT_SIZE, 0, 94, inventory.getWidth(), 14);
     }
 
     private final class BlockGrid extends AbstractWidget {
@@ -332,7 +314,7 @@ public final class CannonSkipScreen extends Screen {
         private static final ResourceLocation SCROLLER = ResourceLocation.withDefaultNamespace("container/creative_inventory/scroller");
         private static final ResourceLocation SCROLLER_DISABLED = ResourceLocation.withDefaultNamespace("container/creative_inventory/scroller_disabled");
 
-        private List<BlockEntry> shown = List.of();
+        private List<CannonBlockGroup> shown = List.of();
         private List<ItemStack> icons = List.of();
         private int scrollRow;
         private int focusedIndex;
@@ -342,10 +324,10 @@ public final class CannonSkipScreen extends Screen {
             super(x, y, SCROLL_X + 12, rows * SLOT_SIZE, text("inventory"));
         }
 
-        private void populate(List<BlockEntry> shown) {
+        private void populate(List<CannonBlockGroup> shown) {
             this.shown = shown;
             icons = shown.stream().map(entry -> {
-                ItemStack icon = new ItemStack(entry.block().asItem());
+                ItemStack icon = entry.icon();
                 return icon.isEmpty() ? new ItemStack(Items.BARRIER) : icon;
             }).toList();
             scrollRow = focusedIndex = 0;
@@ -371,7 +353,7 @@ public final class CannonSkipScreen extends Screen {
             return index < shown.size() ? index : -1;
         }
 
-        private BlockEntry entryAt(double mouseX, double mouseY) {
+        private CannonBlockGroup entryAt(double mouseX, double mouseY) {
             int index = indexAt(mouseX, mouseY);
             return index < 0 ? null : shown.get(index);
         }
@@ -379,9 +361,7 @@ public final class CannonSkipScreen extends Screen {
         private void toggle(int index) {
             if (!active || index < 0 || index >= shown.size())
                 return;
-            Block block = shown.get(index).block();
-            if (!skipped.remove(block))
-                skipped.add(block);
+            shown.get(index).toggle(skipped);
         }
 
         @Override
@@ -394,10 +374,12 @@ public final class CannonSkipScreen extends Screen {
                 int index = scrollRow * COLUMNS + slot;
                 if (index >= shown.size() || !loaded || saving)
                     continue;
-                BlockEntry entry = shown.get(index);
-                boolean excluded = skipped.contains(entry.block());
+                CannonBlockGroup entry = shown.get(index);
+                boolean excluded = entry.skipped(skipped);
                 if (excluded)
                     graphics.fill(x + 1, y + 1, x + 17, y + 17, 0x66c45555);
+                else if (entry.partiallySkipped(skipped))
+                    graphics.fill(x + 1, y + 1, x + 17, y + 17, 0x66c4a055);
                 graphics.renderItem(icons.get(index), x + 1, y + 1);
                 String count = compactCount(entry.count());
                 float countScale = Math.min(0.75f, 16.0f / font.width(count));
@@ -504,9 +486,9 @@ public final class CannonSkipScreen extends Screen {
         @Override
         protected void updateWidgetNarration(NarrationElementOutput output) {
             if (!shown.isEmpty()) {
-                BlockEntry entry = shown.get(focusedIndex);
-                output.add(NarratedElementType.TITLE, text("row_narration", entry.block().getName(), entry.count(),
-                        text(skipped.contains(entry.block()) ? "skip" : "build")));
+                CannonBlockGroup entry = shown.get(focusedIndex);
+                output.add(NarratedElementType.TITLE, text("row_narration", entry.name(), entry.count(),
+                        text(entry.skipped(skipped) ? "skip" : "build")));
                 output.add(NarratedElementType.USAGE, text("grid_narration"));
             } else {
                 output.add(NarratedElementType.TITLE, text(loaded ? "no_results" : "loading"));
