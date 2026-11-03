@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.ourcreationstudios.create_better_schematics'
-version = '0.0.7'
+version = '0.0.1'
 base.archivesName = 'create_better_schematics-forge-1.20.1'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 sourceSets.main.java.srcDir('../common/src/main/java')
