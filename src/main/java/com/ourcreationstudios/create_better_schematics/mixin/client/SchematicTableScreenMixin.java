@@ -14,6 +14,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.neoforged.fml.ModList;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -42,13 +43,15 @@ abstract class SchematicTableScreenMixin extends AbstractSimiContainerScreen<Sch
                     schematicsArea.setState(index);
                     break;
                 }
+        // Blueprinted adds a column of export/share controls beside the table.
+        int tabX = leftPos + (ModList.get().isLoaded("create_blueprinted") ? 226 : 206);
         betterSchematics$modsTab = addRenderableWidget(Button.builder(SchematicModsScreen.text("tab"), button -> {
             String filename = betterSchematics$selection();
             if (filename != null) {
                 betterSchematics$selectedFile = filename;
                 minecraft.setScreen(new SchematicModsScreen((SchematicTableScreen) (Object) this, filename));
             }
-        }).bounds(leftPos + 206, topPos, 46, 20).build());
+        }).bounds(tabX, topPos, 46, 20).build());
         betterSchematics$updateModsTab();
     }
 

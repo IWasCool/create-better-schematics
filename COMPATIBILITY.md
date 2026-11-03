@@ -1,12 +1,20 @@
 # Addon schematic compatibility
 
-This documents the initial **0.0.1** release across NeoForge, Forge and Fabric. The cleanup regression run passed 197 required NeoForge GameTests; the November 3 selected-addon regression passed 363. Earlier dated checks and evidence paths below record local development validation; numbers in historical log filenames are not published release versions.
+This documents the initial **0.0.1** release across NeoForge, Forge and Fabric. The cleanup regression run passed 197 required NeoForge GameTests; the November 3 selected-addon regression passed 363, and the full-pack production-JAR client smoke passed 34 checks. Earlier dated checks and evidence paths below record local development validation; numbers in historical log filenames are not published release versions.
 
 ## November 3, 2026 selected-addon regression
 
 An isolated test setup copied 58 selected installed addon/dependency JARs from the current Create New World instance. With Minecraft 1.21.1, NeoForge 21.1.256, Create 6.0.10, Flywheel 1.0.6 and Ponder 1.0.82, **all 363 required GameTests passed**. Create and Ponder match the installed artifacts byte for byte; the explicit Flywheel test override matches the installed 1.0.6 artifact. Evidence: `build/release-modpack-gametests.log`; selected JARs: `build/release-modpack-test-mods/manifest.json`.
 
 The run exercises the current Transmission & Linkage 0.2.9, Crafts & Additions 1.7.2, Radar 5.0.3, Gadgets & Gizmos prerelease 4 bundle, and Sable 2.0.6 alongside the other selected integrations. The test classpath also includes pinned Tom's Storage 2.4.2, which is absent from the installed pack. This is coverage for the tested configuration, transformation, material-payment and placement cases, rather than every feature of the full 183-JAR pack. Different totals in earlier runs reflect different optional-addon selections.
+
+## November 3, 2026 full-pack client checks
+
+An isolated copy of the complete 183-top-level-JAR pack used the production `create_better_schematics-0.0.1.jar` in place of the older installed copy, plus a test harness. The client loaded 228 mod IDs and **passed all 34 checks** on NeoForge 21.1.256 / Create 6.0.10, with JEI 19.70.0.469 loaded. Actual mouse clicks opened the Schematic Table Mods tab; the checks covered missing-mod file inspection, searching, resizing, refreshing and returning to the selected schematic. They also verified that the Mods tab and Create: Blueprinted 2.2.6's conversion control do not overlap. The tab adjusts its position when Blueprinted is installed.
+
+Evidence: `build/release-modpack-client/run/release-modpack-client-result.json`. The exact tested release artifact has SHA-256 `2c487ae350e4c33af235f52dbf54b9720dcca9ea979e30cc08e0cf2c1a3131a6`.
+
+A second isolated full-pack client run passed with the same production-JAR hash and JEI **19.70.0.469**, again loading 228 mod IDs. It verified a 130-item material bookmark, automatic refresh after applying skips, Skip all, restoring materials after an empty list, source persistence, preservation of personal bookmarks, button spacing and a scrolling material picker. Evidence: `build/release-validation-0.0.1/modpack-jei-result.json`. The full-pack client checks cover startup and these UI/export interactions; the 363 selected-addon GameTests above provide the stated configuration and placement coverage.
 
 ## Schematic Table Mods tab (NeoForge)
 
@@ -156,6 +164,8 @@ Metalwork 3.0.0 includes an unused `GenericDisplayBlockEntity` library class wit
 
 | Run | Latest result | Evidence |
 | --- | --- | --- |
+| November 3 full-pack production-JAR client smoke, 183 pack JARs plus test harness | 34 checks passed; 228 loaded mod IDs; Mods tab and Blueprinted 2.2.6 controls coexist | `build/release-modpack-client/run/release-modpack-client-result.json` |
+| November 3 full-pack JEI 19.70.0.469 client test, same production JAR | Passed export, automatic skip refresh, persistence, bookmark preservation and menu layout checks | `build/release-validation-0.0.1/modpack-jei-result.json` |
 | November 3 selected installed addons, NeoForge 21.1.256 / Flywheel 1.0.6 | 363 required tests passed; 58 selected JARs plus pinned Tom's Storage fallback | `build/release-modpack-gametests.log` |
 | NeoForge development run with Transmission & Linkage 0.2.8 and the expanded content set | 405 required tests passed | `build/transmission-rods-0.0.8-expanded.log` |
 | NeoForge development run without optional addons | 196 required tests passed; production JAR built | `build/transmission-rods-0.0.8-base.log` |
