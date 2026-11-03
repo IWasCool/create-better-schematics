@@ -1,7 +1,7 @@
 package com.ourcreationstudios.create_better_schematics.mixin;
 
 import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchBlockEntity;
-import com.ourcreationstudios.create_better_schematics.porter.SchematicPorter;
+import com.ourcreationstudios.create_better_schematics.compat.SchematicFileFormat;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -29,7 +29,7 @@ abstract class ThresholdSwitchBlockEntityMixin {
     @Inject(method = "read", at = @At("HEAD"), remap = false)
     private void betterSchematics$readLegacyThresholds(CompoundTag tag, HolderLookup.Provider registries,
                                                        boolean clientPacket, CallbackInfo ci) {
-        betterSchematics$thresholdUnit = tag.getString(SchematicPorter.THRESHOLD_UNIT);
+        betterSchematics$thresholdUnit = tag.getString(SchematicFileFormat.THRESHOLD_UNIT);
         // Native amounts take precedence in files carrying both formats.
         betterSchematics$pendingPercentages = !tag.contains("OnAboveAmount", Tag.TAG_ANY_NUMERIC)
                 && !tag.contains("OffBelowAmount", Tag.TAG_ANY_NUMERIC)
@@ -88,6 +88,6 @@ abstract class ThresholdSwitchBlockEntityMixin {
         }
         tag.putBoolean("InStacks", inStacks);
         if (!betterSchematics$thresholdUnit.isEmpty())
-            tag.putString(SchematicPorter.THRESHOLD_UNIT, betterSchematics$thresholdUnit);
+            tag.putString(SchematicFileFormat.THRESHOLD_UNIT, betterSchematics$thresholdUnit);
     }
 }

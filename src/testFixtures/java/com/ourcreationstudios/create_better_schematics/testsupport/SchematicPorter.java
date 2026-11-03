@@ -1,4 +1,4 @@
-package com.ourcreationstudios.create_better_schematics.porter;
+package com.ourcreationstudios.create_better_schematics.testsupport;
 
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
@@ -12,15 +12,17 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import com.ourcreationstudios.create_better_schematics.SchematicDataCompatibility;
+import com.ourcreationstudios.create_better_schematics.compat.SchematicFileFormat;
+import com.ourcreationstudios.create_better_schematics.porter.AttributeFilterCompatibility;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 
-/** Converts the file itself: loading/resaving a template would discard unknown blocks and NBT. */
+/** Historical converter retained only to exercise legacy files in compatibility tests. */
 public final class SchematicPorter {
-    public static final String THRESHOLD_UNIT = "BetterSchematicsThresholdUnit";
+    public static final String THRESHOLD_UNIT = SchematicFileFormat.THRESHOLD_UNIT;
     private static final String PORT_DATA = "BetterSchematicsPort";
     private static final long MAX_NBT_BYTES = 128L * 1024 * 1024;
     private static final Set<String> ITEM_COMPONENTS = Set.of(
@@ -176,15 +178,6 @@ public final class SchematicPorter {
             tag.putString(THRESHOLD_UNIT, "droplets");
         } else if (unit.equals("droplets") && target == Target.FORGE_1_20_1) {
             scaleThreshold(tag, 1, 81);
-            tag.putString(THRESHOLD_UNIT, "millibuckets");
-        }
-    }
-
-    public static void normalizeImportedThreshold(CompoundTag tag) {
-        if (tag.getString(THRESHOLD_UNIT).equals("droplets")) {
-            for (String key : List.of("OnAboveAmount", "OffBelowAmount", "CurrentAmount", "CurrentMinAmount", "CurrentMaxAmount"))
-                if (tag.contains(key, Tag.TAG_ANY_NUMERIC) && tag.getInt(key) >= 0)
-                    tag.putInt(key, (int) Math.round(tag.getInt(key) / 81.0));
             tag.putString(THRESHOLD_UNIT, "millibuckets");
         }
     }

@@ -9,8 +9,8 @@ import java.util.List;
 
 import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.SchematicDataCompatibility;
-import com.ourcreationstudios.create_better_schematics.porter.SchematicPorter;
-import com.ourcreationstudios.create_better_schematics.porter.SchematicPorter.Target;
+import com.ourcreationstudios.create_better_schematics.testsupport.SchematicPorter;
+import com.ourcreationstudios.create_better_schematics.testsupport.SchematicPorter.Target;
 import com.simibubi.create.AllDataComponents;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;

@@ -1,11 +1,11 @@
 package com.ourcreationstudios.create_better_schematics;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.mojang.serialization.Dynamic;
 import com.ourcreationstudios.create_better_schematics.factory.FactoryGaugeConnections;
 import com.ourcreationstudios.create_better_schematics.compat.SchematicFileFormat;
-import com.ourcreationstudios.create_better_schematics.porter.SchematicPorter;
 import com.ourcreationstudios.create_better_schematics.porter.AttributeFilterCompatibility;
 import com.ourcreationstudios.create_better_schematics.porter.LegacyTextComponents;
 import net.minecraft.SharedConstants;
@@ -60,7 +60,7 @@ public final class SchematicDataCompatibility {
 
         FactoryGaugeConnections.convert(tag, exporting);
         if (!exporting)
-            SchematicPorter.normalizeImportedThreshold(tag);
+            normalizeImportedThreshold(tag);
         if (exporting) {
             if (!configurationRoot && isItem(tag) && tag.contains("count", Tag.TAG_ANY_NUMERIC))
                 addLegacyItemData(tag);
@@ -73,6 +73,15 @@ public final class SchematicDataCompatibility {
             }
         }
         return tag;
+    }
+
+    private static void normalizeImportedThreshold(CompoundTag tag) {
+        if (tag.getString(SchematicFileFormat.THRESHOLD_UNIT).equals("droplets")) {
+            for (String key : List.of("OnAboveAmount", "OffBelowAmount", "CurrentAmount", "CurrentMinAmount", "CurrentMaxAmount"))
+                if (tag.contains(key, Tag.TAG_ANY_NUMERIC) && tag.getInt(key) >= 0)
+                    tag.putInt(key, (int) Math.round(tag.getInt(key) / 81.0));
+            tag.putString(SchematicFileFormat.THRESHOLD_UNIT, "millibuckets");
+        }
     }
 
     private static boolean isItem(CompoundTag tag) {

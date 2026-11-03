@@ -45,11 +45,13 @@ sourceSets.main.java.srcDir('compatibility/src/main/java')
 // Production builds do not compile the local GameTest fixtures.
 def gameTestSources = ['gameTests', 'compatTests', 'nativeCompatibilityTests', 'jeiClientTest']
         .any { providers.gradleProperty(it).isPresent() }
-if (!gameTestSources)
+if (gameTestSources)
+    sourceSets.main.java.srcDir('src/testFixtures/java')
+else
     sourceSets.main.java.exclude('**/gametest/**')
 
 tasks.named('jar', Jar).configure {
-    exclude('**/gametest/**', '**/compat_gametest/**', '**/client_tests/**', '**/native_tests/**')
+    exclude('**/gametest/**', '**/compat_gametest/**', '**/client_tests/**', '**/native_tests/**', '**/testsupport/**')
     exclude('fixtures/**', 'data/create_better_schematics/structure/empty.nbt')
 }
 
