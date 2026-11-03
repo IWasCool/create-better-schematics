@@ -43,8 +43,11 @@ legacyForge {
         gameTestServer {
             type = 'gameTestServer'
             sourceSet = sourceSets.gametest
+            loadedMods = [mods.create_better_schematics, mods.better_schematics_tests]
+            programArguments.addAll(['--mixin.config', 'create_better_schematics_forge.mixins.json'])
             gameDirectory = layout.projectDirectory.dir('run-gametest')
             systemProperty 'forge.enabledGameTestNamespaces', 'better_schematics_tests'
+            systemProperty 'betterSchematics.sharedFixtures', file('../build/shareable-fixtures').absolutePath
         }
     }
 }
@@ -75,10 +78,41 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // Forge can exit successfully after a mod-loading error; require an actual passing test result.
+def forgeGameTestLog = file('run-gametest/logs/latest.log')
 tasks.named('runGameTestServer').configure {
     doLast {
-        def log = file('run-gametest/logs/latest.log')
-        if (!log.exists() || !(log.text =~ /All \d+ required tests passed/).find())
-            throw new GradleException('Forge compatibility tests did not pass; inspect ' + log)
+        if (!forgeGameTestLog.exists() || !(forgeGameTestLog.text =~ /All \d+ required tests passed/).find())
+            throw new GradleException('Forge compatibility tests did not pass; inspect ' + forgeGameTestLog)
+    }
+}
+
+// A separate recipient runs stock Create with Better Schematics and its mixins absent.
+if (providers.gradleProperty('nativeCompatibilityTests').isPresent()) {
+    sourceSets { nativeCompatibilityTest {} }
+    configurations {
+        nativeCompatibilityTestImplementation.extendsFrom implementation
+        nativeCompatibilityTestCompileOnly.extendsFrom compileOnly
+        nativeCompatibilityTestRuntimeOnly.extendsFrom runtimeOnly
+    }
+    legacyForge.addModdingDependenciesTo(sourceSets.nativeCompatibilityTest)
+    legacyForge.mods {
+        better_schematics_native_tests { sourceSet sourceSets.nativeCompatibilityTest }
+    }
+    legacyForge.runs {
+        nativeGameTestServer {
+            type = 'gameTestServer'
+            sourceSet = sourceSets.nativeCompatibilityTest
+            loadedMods = [project.legacyForge.mods.getByName('better_schematics_native_tests')]
+            gameDirectory = layout.buildDirectory.dir('native-compatibility/run')
+            systemProperty 'forge.enabledGameTestNamespaces', 'better_schematics_native_tests'
+            systemProperty 'betterSchematics.sharedFixtures', file('../build/shareable-fixtures').absolutePath
+        }
+    }
+    def nativeGameTestLog = layout.buildDirectory.file('native-compatibility/run/logs/latest.log').get().asFile
+    tasks.named('runNativeGameTestServer').configure {
+        doLast {
+            if (!nativeGameTestLog.exists() || !(nativeGameTestLog.text =~ /All \d+ required tests passed/).find())
+                throw new GradleException('Stock Forge sharing tests did not pass; inspect ' + nativeGameTestLog)
+        }
     }
 }

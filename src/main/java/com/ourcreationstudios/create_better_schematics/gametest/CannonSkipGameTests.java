@@ -11,6 +11,8 @@ import com.mojang.authlib.GameProfile;
 import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipAccess;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipPackets;
+import com.ourcreationstudios.create_better_schematics.cannon.CannonMaterialsPackets;
+import com.ourcreationstudios.create_better_schematics.cannon.CannonMaterialsService;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipPackets.Result;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipPackets.Save;
 import com.ourcreationstudios.create_better_schematics.cannon.CannonSkipService;
@@ -45,6 +47,62 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(CreateBetterSchematics.MODID)
 @PrefixGameTestTemplate(false)
 public class CannonSkipGameTests {
+    @GameTest(template = "empty")
+    public static void jeiMaterialsFollowSkipsWithoutChangingTheCannon(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = fixture(helper)) {
+            var cannon = fixture.cannon();
+            FakePlayer player = openMenu(helper, cannon);
+            int fingerprint = ItemStack.hashItemAndComponents(fixture.blueprint());
+            var request = new CannonMaterialsPackets.Request(7, 41, fingerprint);
+            CompoundTag before = cannon.saveWithFullMetadata(helper.getLevel().registryAccess());
+            var full = CannonMaterialsService.inspect(player, request);
+            helper.assertTrue(full.result() == CannonMaterialsPackets.Result.READY
+                            && full.entries().size() == 3, "JEI receives the full native material list");
+            helper.assertTrue(full.entries().stream().anyMatch(entry -> entry.stack().is(Items.STONE) && entry.count() == 2)
+                            && full.entries().stream().anyMatch(entry -> entry.stack().is(Items.OAK_STAIRS) && entry.count() == 2),
+                    "All state variants contribute their real required item counts");
+            helper.assertTrue(before.equals(cannon.saveWithFullMetadata(helper.getLevel().registryAccess()))
+                            && !cannon.printer.isLoaded(), "Reading materials cannot initialize or mutate the working cannon");
+            settings(cannon).replace(Set.of(ResourceLocation.parse("minecraft:stone"), ResourceLocation.parse("minecraft:barrel")));
+            var filtered = CannonMaterialsService.inspect(player, request);
+            helper.assertTrue(filtered.entries().size() == 1 && filtered.entries().getFirst().stack().is(Items.OAK_STAIRS)
+                            && filtered.entries().getFirst().count() == 2, "Skipped block types contribute no JEI material entries");
+            RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+            try {
+                var codec = CannonMaterialsPackets.View.CODEC;
+                codec.encode(buffer, filtered);
+                var decoded = codec.decode(buffer);
+                helper.assertTrue(decoded.requestId() == 41 && decoded.fingerprint() == fingerprint
+                                && decoded.entries().getFirst().count() == 2
+                                && ItemStack.isSameItemSameComponents(decoded.entries().getFirst().stack(), filtered.entries().getFirst().stack()),
+                        "Only the matching menu request receives the complete item/count snapshot");
+            } finally { buffer.release(); }
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void jeiMaterialRequestsRejectStaleAndClosedMenus(GameTestHelper helper) throws IOException {
+        try (Fixture fixture = fixture(helper)) {
+            FakePlayer player = openMenu(helper, fixture.cannon());
+            int fingerprint = ItemStack.hashItemAndComponents(fixture.blueprint());
+            var changed = CannonMaterialsService.inspect(player,
+                    new CannonMaterialsPackets.Request(7, 1, fingerprint + 1));
+            helper.assertTrue(changed.result() == CannonMaterialsPackets.Result.CHANGED
+                            && changed.entries().isEmpty(), "Stale schematics cannot replace a JEI list");
+            var wrongMenu = CannonMaterialsService.inspect(player,
+                    new CannonMaterialsPackets.Request(8, 2, fingerprint));
+            helper.assertTrue(wrongMenu.result() == CannonMaterialsPackets.Result.CLOSED,
+                    "A forged cannon menu cannot expose its materials");
+            player.containerMenu = player.inventoryMenu;
+            var closed = CannonMaterialsService.inspect(player,
+                    new CannonMaterialsPackets.Request(7, 3, fingerprint));
+            helper.assertTrue(closed.entries().isEmpty()
+                            && closed.result() == CannonMaterialsPackets.Result.CLOSED,
+                    "Requests after closing the cannon are rejected");
+        }
+        helper.succeed();
+    }
     @GameTest(template = "empty")
     public static void repeatedFilterPacketsCannotTransferItems(GameTestHelper helper) throws IOException {
         try (Fixture fixture = fixture(helper)) {

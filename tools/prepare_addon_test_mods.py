@@ -19,7 +19,8 @@ ADDONS = {
     'tracks', 'trading_floor', 'cbc_more_content', 'item_sink', 'sliceanddice', 'farmersdelight', 'interiors',
     'mekanism', 'ae2', 'storagedrawers', 'sophisticatedstorage',
 }
-BUILTINS = {'minecraft', 'neoforge', 'forge', 'java', 'create', 'flywheel', 'ponder'}
+# Supplied by the development classpath rather than copied from the installed pack.
+BUILTINS = {'minecraft', 'neoforge', 'forge', 'java', 'create', 'flywheel', 'ponder', 'create_better_schematics'}
 
 
 def metadata(archive):

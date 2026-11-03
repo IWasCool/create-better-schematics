@@ -1,6 +1,16 @@
 # Addon schematic compatibility
 
-This documents the initial **0.0.1** release across NeoForge, Forge and Fabric. The cleanup regression run passed 197 required NeoForge GameTests. Other dated checks and evidence paths below record earlier local development validation; numbers in historical log filenames are not published release versions.
+This documents the initial **0.0.1** release across NeoForge, Forge and Fabric. The cleanup regression run passed 197 required NeoForge GameTests; the November 3 selected-addon regression passed 363. Earlier dated checks and evidence paths below record local development validation; numbers in historical log filenames are not published release versions.
+
+## November 3, 2026 selected-addon regression
+
+An isolated test setup copied 58 selected installed addon/dependency JARs from the current Create New World instance. With Minecraft 1.21.1, NeoForge 21.1.256, Create 6.0.10, Flywheel 1.0.6 and Ponder 1.0.82, **all 363 required GameTests passed**. Create and Ponder match the installed artifacts byte for byte; the explicit Flywheel test override matches the installed 1.0.6 artifact. Evidence: `build/release-modpack-gametests.log`; selected JARs: `build/release-modpack-test-mods/manifest.json`.
+
+The run exercises the current Transmission & Linkage 0.2.9, Crafts & Additions 1.7.2, Radar 5.0.3, Gadgets & Gizmos prerelease 4 bundle, and Sable 2.0.6 alongside the other selected integrations. The test classpath also includes pinned Tom's Storage 2.4.2, which is absent from the installed pack. This is coverage for the tested configuration, transformation, material-payment and placement cases, rather than every feature of the full 183-JAR pack. Different totals in earlier runs reflect different optional-addon selections.
+
+## Schematic Table Mods tab (NeoForge)
+
+Select a schematic and open **Mods** beside Refresh to inspect its referenced mod IDs, including blocks, entities, items, fluids and item components. The searchable list marks mods installed on the client and missing namespaces. Inspection reads the saved file directly, so references to missing blocks and items remain visible. This client feature also works on a Create server without Better Schematics.
 
 ## Obtainable items in the picker (NeoForge)
 
@@ -26,9 +36,9 @@ Local Transmission & Linkage validation, October 26, 2026: 405 required tests pa
 
 ## Optional installation
 
-NeoForge supports Transmission & Linkage 0.2.8 universal-joint rods whose two reciprocal endpoints are included in the schematic and have no ship/sublevel references. Both andesite and brass rods retain their material and rest length through rotation and mirroring. A pending connection waits for both copied endpoints and survives save/reload and cannon projectiles; it never targets an original endpoint. Cannon checklists charge for one rod, at a designated endpoint, before the pair can connect. Better Schematics is needed on the side performing placement for this extension. Transmission & Linkage remains optional.
+NeoForge supports Transmission & Linkage 0.2.8 and 0.2.9 universal-joint rods whose two reciprocal endpoints are included in the schematic and have no ship/sublevel references. Both andesite and brass rods retain their material and rest length through rotation and mirroring. A pending connection waits for both copied endpoints and survives save/reload and cannon projectiles; it never targets an original endpoint. Cannon checklists charge for one rod, at a designated endpoint, before the pair can connect. Better Schematics is needed on the side performing placement for this extension. Transmission & Linkage remains optional.
 
-On clients with Better Schematics, Transmission & Linkage's Toolgun login recommendation is suppressed at its own handler. Other chat messages are unaffected. This does not add Toolgun's ship-blueprint or assembly features: hydraulic links, cross-sublevel rods and hinge assemblies still require the relevant Aeronautics workflow.
+For Transmission & Linkage 0.2.8, Better Schematics suppresses the Toolgun login recommendation at its own handler. Version 0.2.9 removed that handler class, so the optional mixin is inactive there. Other chat messages are unaffected. This does not add Toolgun's ship-blueprint or assembly features: hydraulic links, cross-sublevel rods and hinge assemblies still require the relevant Aeronautics workflow.
 
 The NeoForge client can join a compatible Create server without Better Schematics. All five cannon payloads are optional, and the client checks the negotiated channels before replacing Create's skip-missing button or opening the extended picker. When the addon is absent on the server, saving remains local and Create's normal controls remain available. Installing on both sides enables the existing cannon picker and server placement fixes; singleplayer retains those features through its integrated server.
 
@@ -66,7 +76,7 @@ With a matching companion installed, the same native file is adapted automatical
 
 | Environment | Tested versions | Result | Evidence |
 | --- | --- | --- | --- |
-| NeoForge source and regressions | Minecraft 1.21.1, Create 6.0.10, NeoForge 21.1.255 | 197 required tests passed in the cleanup regression run | `run/logs/latest.log` |
+| NeoForge selected-addon regression, November 3 | Minecraft 1.21.1, Create 6.0.10, NeoForge 21.1.256, Flywheel 1.0.6 | 363 required tests passed | `build/release-modpack-gametests.log` |
 | Create-only recipient | Same Minecraft/Create, Better Schematics absent | Six native sharing, cross-version and registry checks | `build/native-compatibility/run/logs/latest.log` |
 | Forge recipient | Minecraft 1.20.1, Create 6.0.8, Forge 47.4.10 | Seven required tests passed, including native modern-component export | `forge/run-gametest/logs/latest.log` |
 | Stock Forge recipient | Minecraft 1.20.1, Create 6.0.8, Better Schematics absent | Two required tests passed using fresh NeoForge machine and belt exports | `forge/build/native-compatibility/run/logs/latest.log` |
@@ -80,7 +90,7 @@ The full bundled Create Fabric suite was previously checked: `TestFluids.thresho
 
 ## Verified NeoForge features
 
-These tests use Minecraft 1.21.1, NeoForge 21.1.255, and Create 6.0.10. Tests exercise real block entities, export actual `.nbt` files, load them with Create's schematic printer, apply a rotation or rotation plus mirror, restore serialized cannon projectiles, and reload the resulting block entities. Native addon support is retained and tested alongside the configuration profiles.
+The earlier tests use Minecraft 1.21.1, NeoForge 21.1.255, and Create 6.0.10; the November 3 selected-addon run uses NeoForge 21.1.256 with the same Minecraft/Create versions. Tests exercise real block entities, export actual `.nbt` files, load them with Create's schematic printer, apply a rotation or rotation plus mirror, restore serialized cannon projectiles, and reload the resulting block entities. Native addon support is retained and tested alongside the configuration profiles.
 
 Create's native chain-drive coverage adds 150 tests: 144 geometric combinations of connection axis, shaft axis, rotation, mirror and placement path, plus six interleaved-processor placement cases. Both encased chain drives and adjustable chain gearshifts retain their shaft axis, connection plane and end/middle roles, and remain connected after ticking and reloads. The processor cases wait for the whole cannon build and all projectiles to finish before checking the final twists. These layouts did not reproduce a chain-orientation defect, so no additional orientation patch is claimed.
 
@@ -90,7 +100,7 @@ Create's native chain-drive coverage adds 150 tests: 144 geometric combinations 
 | NeoForge base with chain-drive coverage | 184 required tests passed | `build/chain-drive-base.log` |
 | Power Grid | 0.6.2 | Existing wire transfer/endpoint transforms/material costs, meter units, display equations/units/prefixes, button timeout and normally-closed setting. Wires also have Forge cross-loader tests. |
 | Tom's Storage | 2.4.2 | Emitter filter/threshold/comparison, hopper ghost filter, cable channel, painted trim and proxy camouflage. |
-| Crafts & Additions | 1.6.0 | Motor speed and direction. |
+| Crafts & Additions | 1.6.0; 1.7.2 (November 3) | Motor speed and direction. |
 | Copycats+ | 3.0.9 | Single-material copycat material, consumed item, connected-texture setting, and a working cannon paying for the material. |
 | Railways / Steam 'n' Rails | 0.2.1 | Headstock wood/color, wooden buffer material, smokestack color, conductor whistle flag color. |
 | Connected | 1.3.2 | Dashboard sign text/color/glow; pulse-program parameters, fresh progress counters, and idle placement. |
@@ -103,12 +113,12 @@ Create's native chain-drive coverage adds 150 tests: 144 geometric combinations 
 | Numismatics | 1.1.0 | Native price settings and bank labels. Added profiles exclude money, cards, inventories, and ownership data. |
 | Pipe Organs | 0.9.2.1 | Pipe pitch, native note-link frequency, MIDI ghost frequencies, tracker buttons. |
 | Simulated | 1.3.2 | Altitude thresholds, laser color/range, sensor opacity, nameplate text/style, receiver distance limits, and nonempty typewriter key/frequency bindings. |
-| Gadgets & Gizmos / Thrusters bundle | 2.0-pre-release-3 | Camera FOV/raycast/filter settings, display dimensions, dock options/name, coupler inversion, scissor range, native joystick settings. These blocks use the `createthrusters` mod ID. |
+| Gadgets & Gizmos / Thrusters bundle | 2.0-pre-release-3; 2.0-pre-release-4 bundle (November 3) | Camera FOV/raycast/filter settings, display dimensions, dock options/name, coupler inversion, scissor range, native joystick settings. These blocks use the `createthrusters` mod ID. |
 | Propulsion | 1.1.5 | Tilt limits, thruster dye/plume settings, native power controls and dual-row value. |
-| Radar | 0.4.9.4 | Scan field of view, height/range and track expiry. |
+| Radar | 0.4.9.4; 5.0.3 (November 3) | Scan field of view, height/range and track expiry. |
 | Submarine | 3.3.0 | Alarm period and barometer name. |
 | High Seas | bundled with Submarine 3.3.0 | Engine throttle cap and enabled setting; added profile omits fuel and burn progress. |
-| Create Aeronautics: Transmission & Linkage | 0.2.8 | Damping-bearing resistance; hydraulic and hinge-head stretch resistance, free mode, expected length, redstone minimum/maximum lengths and return force; brass hinge angle limits. Both universal-joint blocks support selected in-world andesite/brass rod connections, including transforms, delayed endpoints, reloads, saved cannon projectiles and one-rod material payment. |
+| Create Aeronautics: Transmission & Linkage | 0.2.8; 0.2.9 (November 3) | Damping-bearing resistance; hydraulic and hinge-head stretch resistance, free mode, expected length, redstone minimum/maximum lengths and return force; brass hinge angle limits. Both universal-joint blocks support selected in-world andesite/brass rod connections, including transforms, delayed endpoints, reloads, saved cannon projectiles and one-rod material payment. |
 | Warnautics | 1.0.8 | Siren scanning/watch settings, with live linger omitted from the profile. |
 | Northstar | 0.6.6 | Native combustion-engine speed. |
 | Petrochem | 1.3.3 | Native small-engine speed. |
@@ -146,6 +156,7 @@ Metalwork 3.0.0 includes an unused `GenericDisplayBlockEntity` library class wit
 
 | Run | Latest result | Evidence |
 | --- | --- | --- |
+| November 3 selected installed addons, NeoForge 21.1.256 / Flywheel 1.0.6 | 363 required tests passed; 58 selected JARs plus pinned Tom's Storage fallback | `build/release-modpack-gametests.log` |
 | NeoForge development run with Transmission & Linkage 0.2.8 and the expanded content set | 405 required tests passed | `build/transmission-rods-0.0.8-expanded.log` |
 | NeoForge development run without optional addons | 196 required tests passed; production JAR built | `build/transmission-rods-0.0.8-base.log` |
 | NeoForge development run with Transmission & Linkage and its required bundled content | 289 required tests passed | `build/transmission-rods-0.0.8-minimal.log` |
@@ -164,6 +175,15 @@ py -3 tools/prepare_addon_test_mods.py --mods-dir 'C:/path/to/instance/mods'
 py -3 tools/prepare_addon_test_mods.py --mods-dir 'C:/path/to/instance/mods' --additional-mods-dir 'C:/path/to/extra-jars'
 .\gradlew.bat -PcompatTests -PcompatModsDir=build/addon-test-mods runGameTestServer
 ```
+
+The November 3 selected-addon run used:
+
+```powershell
+py -3 tools/prepare_addon_test_mods.py --mods-dir 'C:/path/to/instance/mods' --output build/release-modpack-test-mods
+.\gradlew.bat -PcompatTests -PcompatModsDir=build/release-modpack-test-mods -Pneo_version=21.1.256 -PcompatFlywheelVersion=1.0.6 runGameTestServer
+```
+
+Power Grid, Architectury, Crafts & Additions and Tom's Storage use matching files from the selected directory when present, with the pinned dependencies as fallbacks. The installed Better Schematics JAR is excluded in favor of the source build.
 
 To reproduce the four popular-mod checks without an installed modpack:
 

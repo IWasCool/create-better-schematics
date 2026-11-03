@@ -1,12 +1,16 @@
 package com.ourcreationstudios.create_better_schematics.gametest;
 
-import com.ourcreationstudios.create_better_schematics.BeltCasingState;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import com.ourcreationstudios.create_better_schematics.SchematicDataCompatibility;
 import com.ourcreationstudios.create_better_schematics.CreateBetterSchematics;
 import com.simibubi.create.content.kinetics.belt.BeltBlock;
 import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltBlockEntity.CasingType;
 import com.simibubi.create.content.kinetics.belt.BeltPart;
 import com.simibubi.create.content.schematics.cannon.LaunchedItem;
+import com.simibubi.create.content.schematics.SchematicExport;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
@@ -15,6 +19,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -36,23 +41,77 @@ public class BeltCasingGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void andesiteWithoutNbt(GameTestHelper helper) {
+    public static void legacyAndesiteWithoutNbt(GameTestHelper helper) {
         roundTrip(helper, CasingType.ANDESITE, CasingType.ANDESITE, true, false, Rotation.NONE);
     }
 
     @GameTest(template = "empty")
-    public static void brassWithoutNbt(GameTestHelper helper) {
+    public static void legacyBrassWithoutNbt(GameTestHelper helper) {
         roundTrip(helper, CasingType.BRASS, CasingType.BRASS, true, false, Rotation.NONE);
     }
 
     @GameTest(template = "empty")
-    public static void mixedCasingWithoutNbtRotated(GameTestHelper helper) {
+    public static void legacyMixedCasingWithoutNbtRotated(GameTestHelper helper) {
         roundTrip(helper, CasingType.ANDESITE, CasingType.BRASS, true, false, Rotation.CLOCKWISE_90);
     }
 
     @GameTest(template = "empty")
-    public static void synthesizedEmptyCasingNbt(GameTestHelper helper) {
+    public static void legacyStateRecoversSynthesizedEmptyCasingNbt(GameTestHelper helper) {
         roundTrip(helper, CasingType.BRASS, CasingType.ANDESITE, true, true, Rotation.NONE);
+    }
+
+    @GameTest(template = "empty")
+    public static void exportedBeltsUseOnlyNativeCreateData(GameTestHelper helper) throws IOException {
+        BlockPos source = createBelt(helper, CasingType.ANDESITE, CasingType.BRASS);
+        var result = SchematicExport.saveSchematic(Path.of("../build/shareable-fixtures"), "native-belts.nbt",
+                true, helper.getLevel(), source, source.east());
+        helper.assertTrue(result != null, "The normal Create export writes a shareable belt file");
+        var data = net.minecraft.nbt.NbtIo.readCompressed(result.file(), net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+        for (Tag entry : data.getList("palette", Tag.TAG_COMPOUND))
+            helper.assertTrue(!((CompoundTag) entry).getCompound("Properties").contains("create_better_schematics_casing"),
+                    "Shared files must not depend on an addon block state property");
+        for (Tag entry : data.getList("blocks", Tag.TAG_COMPOUND)) {
+            CompoundTag nbt = ((CompoundTag) entry).getCompound("nbt");
+            helper.assertTrue(List.of("ANDESITE", "BRASS").contains(nbt.getString("Casing")),
+                    "Create's own Casing field retains each segment's material");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void ambiguousLegacyPaletteKeepsNativeCasing(GameTestHelper helper) {
+        CompoundTag source = new CompoundTag();
+        ListTag palettes = new ListTag();
+        for (String material : List.of("andesite", "brass")) {
+            CompoundTag state = new CompoundTag();
+            state.putString("Name", "create:belt");
+            CompoundTag properties = new CompoundTag();
+            properties.putString("casing", "true");
+            properties.putString("create_better_schematics_casing", material);
+            state.put("Properties", properties);
+            ListTag palette = new ListTag();
+            palette.add(state);
+            palettes.add(palette);
+        }
+        source.put("palettes", palettes);
+        CompoundTag block = new CompoundTag();
+        block.putInt("state", 0);
+        CompoundTag nativeData = new CompoundTag();
+        nativeData.putString("Casing", "ANDESITE");
+        block.put("nbt", nativeData);
+        ListTag blocks = new ListTag();
+        blocks.add(block);
+        source.put("blocks", blocks);
+        CompoundTag converted = SchematicDataCompatibility.importSchematic(source);
+        helper.assertTrue(converted.getList("blocks", Tag.TAG_COMPOUND).getCompound(0)
+                        .getCompound("nbt").getString("Casing").equals("ANDESITE"),
+                "Conflicting legacy palette variants must not overwrite valid native NBT");
+        helper.assertTrue(palettes.getList(0).getCompound(0).getCompound("Properties")
+                        .contains("create_better_schematics_casing"), "Migration leaves the source data intact");
+        for (Tag palette : converted.getList("palettes", Tag.TAG_LIST))
+            helper.assertTrue(!((ListTag) palette).getCompound(0).getCompound("Properties")
+                    .contains("create_better_schematics_casing"), "Migrated palettes use only native state properties");
+        helper.succeed();
     }
 
     @GameTest(template = "empty")
@@ -85,6 +144,12 @@ public class BeltCasingGameTests {
         if (omitNbt) {
             for (Tag entry : saved.getList("blocks", Tag.TAG_COMPOUND)) {
                 CompoundTag block = (CompoundTag) entry;
+                // Recreate the old addon-only encoding, including files whose NBT was stripped.
+                int x = block.getList("pos", Tag.TAG_INT).getInt(0);
+                CompoundTag properties = saved.getList("palette", Tag.TAG_COMPOUND)
+                        .getCompound(block.getInt("state")).getCompound("Properties");
+                properties.putString("create_better_schematics_casing", (x == 0 ? first : second).name()
+                        .toLowerCase(java.util.Locale.ROOT));
                 block.remove("nbt");
                 if (synthesizeNbt) {
                     CompoundTag defaultNbt = new CompoundTag();
@@ -95,7 +160,8 @@ public class BeltCasingGameTests {
             }
         }
         StructureTemplate reloaded = new StructureTemplate();
-        reloaded.load(helper.getLevel().registryAccess().lookupOrThrow(Registries.BLOCK), saved);
+        reloaded.load(helper.getLevel().registryAccess().lookupOrThrow(Registries.BLOCK),
+                SchematicDataCompatibility.importSchematic(saved));
         BlockPos target = helper.absolutePos(new BlockPos(3, 2, 4));
         StructurePlaceSettings settings = new StructurePlaceSettings().setRotation(rotation).setKnownShape(true);
         helper.assertTrue(reloaded.placeInWorld(helper.getLevel(), target, target, settings,
@@ -132,7 +198,8 @@ public class BeltCasingGameTests {
         BeltBlockEntity belt = (BeltBlockEntity) helper.getLevel().getBlockEntity(pos);
         helper.assertTrue(belt.casing == expected,
                 "Belt at " + pos + " expected " + expected + " but got " + belt.casing);
-        helper.assertTrue(belt.getBlockState().getValue(BeltCasingState.MATERIAL).toCreate() == expected,
-                "Block state must retain " + expected + " at " + pos);
+        helper.assertTrue(belt.getBlockState().getBlock().getStateDefinition()
+                        .getProperty("create_better_schematics_casing") == null,
+                "Installing the mod must not change server/client belt state IDs");
     }
 }

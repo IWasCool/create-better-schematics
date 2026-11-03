@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.simibubi.create.AllDataComponents;
+import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmBlockEntity;
 import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPoint;
 import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchBlock;
@@ -40,6 +41,62 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder("better_schematics_native_tests")
 @PrefixGameTestTemplate(false)
 public final class NativeSchematicSharingTests {
+    @GameTest(template = "empty")
+    public static void everyBlockStateNetworkIdMatchesTheInstalledClient(GameTestHelper helper) throws IOException {
+        helper.assertTrue(!ModList.get().isLoaded("create_better_schematics"), "Compare against a stock Create recipient");
+        Path states = Path.of(System.getProperty("betterSchematics.sharedFixtures"), "block-state-ids.txt");
+        String nativeStates = java.util.stream.IntStream.range(0, Block.BLOCK_STATE_REGISTRY.size())
+                .mapToObj(id -> id + "=" + Block.BLOCK_STATE_REGISTRY.byId(id))
+                .collect(java.util.stream.Collectors.joining("\n"));
+        helper.assertTrue(Files.readString(states).equals(nativeStates),
+                "Installing Better Schematics must leave every network block-state ID identical to stock Create");
+        helper.succeed();
+    }
+    @GameTest(template = "empty", timeoutTicks = 60)
+    public static void stockModernCreateLoadsLegacyExportWithoutAnImporter(GameTestHelper helper) throws Exception {
+        helper.assertTrue(!ModList.get().isLoaded("create_better_schematics"), "The recipient has no importer or addon mixins");
+        Path fresh = Path.of(System.getProperty("betterSchematics.sharedFixtures", "."), "forge-shared-machines.nbt");
+        CompoundTag data;
+        if (Files.isRegularFile(fresh)) {
+            data = NbtIo.readCompressed(fresh, NbtAccounter.unlimitedHeap());
+        } else {
+            try (var stream = NativeSchematicSharingTests.class.getResourceAsStream("/fixtures/forge-shared-native.nbt")) {
+                if (stream == null)
+                    throw new IOException("Missing captured Forge export; run the Forge export tests first");
+                data = NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
+            }
+        }
+        helper.assertTrue(data.getInt("DataVersion") == 3465, "The shared file retains its native 1.20.1 DataVersion");
+        BlockPos anchor = helper.absolutePos(new BlockPos(2, 2, 2));
+        place(helper, data, anchor);
+        BlockPos switchPos = position(data, "create:stockpile_switch").offset(anchor);
+        BlockPos attributePos = position(data, "create:stockpile_switch", 1).offset(anchor);
+        helper.runAfterDelay(3, () -> {
+            assertSwitch(helper, (ThresholdSwitchBlockEntity) helper.getLevel().getBlockEntity(switchPos));
+            var attributeSwitch = (ThresholdSwitchBlockEntity) helper.getLevel().getBlockEntity(attributePos);
+            FilteringBehaviour filtering = attributeSwitch.getBehaviour(FilteringBehaviour.TYPE);
+            helper.assertTrue(filtering.test(new ItemStack(Items.IRON_INGOT))
+                            && !filtering.test(new ItemStack(Items.OAK_PLANKS)),
+                    "Stock modern Create restores native attribute predicates, inversion, and conjunction mode");
+            helper.succeed();
+        });
+    }
+    @GameTest(template = "empty", timeoutTicks = 60)
+    public static void nativeCreateRestoresFreshExportedBeltCasings(GameTestHelper helper) throws IOException {
+        helper.assertTrue(!ModList.get().isLoaded("create_better_schematics"), "No addon or addon mixins may be loaded");
+        CompoundTag data = freshFixture("native-belts.nbt");
+        BlockPos anchor = helper.absolutePos(new BlockPos(2, 2, 2));
+        place(helper, data, anchor);
+        helper.runAfterDelay(3, () -> {
+            BeltBlockEntity first = (BeltBlockEntity) helper.getLevel().getBlockEntity(anchor);
+            BeltBlockEntity second = (BeltBlockEntity) helper.getLevel().getBlockEntity(anchor.east());
+            helper.assertTrue(first != null && first.casing == BeltBlockEntity.CasingType.ANDESITE,
+                    "Stock Create restores the native andesite casing");
+            helper.assertTrue(second != null && second.casing == BeltBlockEntity.CasingType.BRASS,
+                    "Stock Create restores the native brass casing");
+            helper.succeed();
+        });
+    }
     @GameTest(template = "empty", timeoutTicks = 60)
     public static void nativeCreateLoadsSharedFile(GameTestHelper helper) throws Exception {
         helper.assertTrue(!ModList.get().isLoaded("create_better_schematics"),
@@ -100,7 +157,8 @@ public final class NativeSchematicSharingTests {
         helper.assertTrue(threshold.inStacks && threshold.isInverted(), "Native display mode and inversion survive");
         FilteringBehaviour filtering = threshold.getBehaviour(FilteringBehaviour.TYPE);
         ItemStack namedIron = new ItemStack(Items.IRON_INGOT);
-        namedIron.set(DataComponents.CUSTOM_NAME, Component.literal("Calibration sample"));
+        namedIron.set(DataComponents.CUSTOM_NAME, Component.literal(
+                System.getProperty("betterSchematics.sharedFixtures") == null ? "Calibration sample" : "Porter sample"));
         helper.assertTrue(!filtering.test(namedIron) && filtering.test(new ItemStack(Items.IRON_INGOT))
                         && filtering.test(new ItemStack(Items.GOLD_INGOT)),
                 "Native list filters preserve entries, names and deny-list behavior");
@@ -129,10 +187,19 @@ public final class NativeSchematicSharingTests {
     }
 
     private static CompoundTag fixture() throws IOException {
+        if (System.getProperty("betterSchematics.sharedFixtures") != null)
+            return freshFixture("neoforge-shared-machines.nbt");
         try (var stream = NativeSchematicSharingTests.class.getResourceAsStream("/fixtures/neoforge-native.nbt")) {
             if (stream == null) throw new IOException("Missing real shared schematic fixture");
             return NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
         }
+    }
+
+    private static CompoundTag freshFixture(String name) throws IOException {
+        Path file = Path.of(System.getProperty("betterSchematics.sharedFixtures"), name);
+        if (!Files.isRegularFile(file))
+            throw new IOException("Missing freshly exported schematic: " + file);
+        return NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap());
     }
 
     private static void place(GameTestHelper helper, CompoundTag data, BlockPos anchor) throws IOException {
@@ -156,12 +223,16 @@ public final class NativeSchematicSharingTests {
     }
 
     private static BlockPos position(CompoundTag data, String id) {
+        return position(data, id, 0);
+    }
+
+    private static BlockPos position(CompoundTag data, String id, int index) {
         for (Tag value : data.getList("blocks", Tag.TAG_COMPOUND)) {
             CompoundTag block = (CompoundTag) value;
             // Schematics omit block-entity IDs for plain blocks such as the depot.
             int state = block.getInt("state");
             String blockId = data.getList("palette", Tag.TAG_COMPOUND).getCompound(state).getString("Name");
-            if (blockId.equals(id)) {
+            if (blockId.equals(id) && index-- == 0) {
                 ListTag pos = block.getList("pos", Tag.TAG_INT);
                 return new BlockPos(pos.getInt(0), pos.getInt(1), pos.getInt(2));
             }

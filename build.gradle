@@ -59,6 +59,8 @@ def compatibilityTests = providers.gradleProperty('compatTests').isPresent()
 if (compatibilityTests) {
     sourceSets {
         compatTest {
+            // The dedicated Mods-screen client harness compiles this entrypoint separately.
+            java.exclude('**/SchematicModsClientTest.java')
             compileClasspath += sourceSets.main.output
             runtimeClasspath += sourceSets.main.output
         }
@@ -149,11 +151,22 @@ if (compatibilityTests) {
         sourceSet = sourceSets.compatTest
         systemProperty 'neoforge.enabledGameTestNamespaces', 'create_better_schematics,better_schematics_compat_tests'
     }
+    // Compile and run against the selected pack's jars when available, without also loading pinned copies.
+    def compatibilityDependency = { String pattern, String pinned ->
+        def selected = providers.gradleProperty('compatModsDir').isPresent()
+                ? fileTree(dir: providers.gradleProperty('compatModsDir').get(), include: [pattern]).files
+                : []
+        if (selected.size() > 1)
+            throw new GradleException('Multiple compatibility test dependencies match ' + pattern + ': ' + selected)
+        selected.isEmpty() ? pinned : files(selected)
+    }
     dependencies {
-        compatTestImplementation 'maven.modrinth:power-grid:jCkPHjmP'
-        compatTestImplementation 'dev.architectury:architectury-neoforge:13.0.11'
-        compatTestImplementation 'maven.modrinth:createaddition:qPr8V4G2'
-        compatTestImplementation 'maven.modrinth:toms-storage:WQAMoIMC'
+        compatTestImplementation compatibilityDependency('powergrid-*.jar', 'maven.modrinth:power-grid:jCkPHjmP')
+        compatTestImplementation compatibilityDependency('architectury-*.jar', 'dev.architectury:architectury-neoforge:13.0.11')
+        compatTestImplementation compatibilityDependency('createaddition-*.jar', 'maven.modrinth:createaddition:qPr8V4G2')
+        compatTestImplementation compatibilityDependency('toms_storage-*.jar', 'maven.modrinth:toms-storage:WQAMoIMC')
+        if (providers.gradleProperty('compatFlywheelVersion').isPresent())
+            compatTestRuntimeOnly "dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${providers.gradleProperty('compatFlywheelVersion').get()}"
         if (providers.gradleProperty('compatModsDir').isPresent()) {
             compatTestRuntimeOnly fileTree(dir: providers.gradleProperty('compatModsDir').get(),
                     include: ['*.jar'], exclude: ["create-${minecraft_version}-*.jar", 'create_better_schematics-*.jar',
@@ -163,6 +176,35 @@ if (compatibilityTests) {
     tasks.register('compatTestJar', Jar) {
         archiveClassifier = 'compat-tests'
         from sourceSets.compatTest.output
+    }
+    if (providers.gradleProperty('transmissionClientTest').isPresent()) {
+        def noticeResult = layout.buildDirectory.file('transmission-notice-client/result.json').get().asFile
+        def noticeFmlConfig = layout.buildDirectory.file('transmission-notice-client/run/config/fml.toml').get().asFile
+        neoForge.runs {
+            transmissionNoticeClientTest {
+                client()
+                sourceSet = sourceSets.compatTest
+                gameDirectory = layout.buildDirectory.dir('transmission-notice-client/run')
+                logLevel = org.slf4j.event.Level.INFO
+                systemProperty 'betterSchematics.transmissionNoticeResult', noticeResult.absolutePath
+                programArguments.addAll(['--width', '854', '--height', '480'])
+            }
+        }
+        tasks.named('runTransmissionNoticeClientTest', JavaExec).configure {
+            maxHeapSize = '4G'
+            doFirst {
+                noticeResult.delete()
+                noticeFmlConfig.parentFile.mkdirs()
+                // Keep the bundled Aeronautics dev classpath's registry initialization deterministic.
+                noticeFmlConfig.text = noticeFmlConfig.exists()
+                        ? noticeFmlConfig.text.replaceAll(/(?m)^maxThreads\s*=.*$/, 'maxThreads = 1')
+                        : 'maxThreads = 1\n'
+            }
+            doLast {
+                if (!noticeResult.exists() || !noticeResult.text.contains('"passed":true'))
+                    throw new GradleException('Transmission recommendation test did not pass; inspect ' + noticeResult)
+            }
+        }
     }
 }
 
@@ -202,6 +244,9 @@ configurations {
 
 dependencies {
     compileOnly 'mezz.jei:jei-1.21.1-neoforge:19.53.0.426'
+    if (providers.gradleProperty('jeiClientTest').isPresent() && !providers.gradleProperty('emiWithoutJei').isPresent())
+        // Keep the oldest supported API for compilation; test the installed JEI release by default.
+        localRuntime "mezz.jei:jei-1.21.1-neoforge:${providers.gradleProperty('jeiVersion').getOrElse('19.70.0.460')}"
     // Exact Create 6.0.10 distribution used for the compatibility tests.
     compileOnly 'maven.modrinth:create:UjX6dr61'
     compileOnly 'org.spongepowered:mixin:0.8.5'
@@ -252,17 +297,90 @@ if (providers.gradleProperty('nativeCompatibilityTests').isPresent()) {
             loadedMods = [project.neoForge.mods.getByName('better_schematics_native_tests')]
             gameDirectory = layout.buildDirectory.dir('native-compatibility/run')
             systemProperty 'neoforge.enabledGameTestNamespaces', 'better_schematics_native_tests'
+            systemProperty 'betterSchematics.sharedFixtures', layout.buildDirectory.dir('shareable-fixtures').get().asFile.absolutePath
         }
     }
+    def nativeGameTestLog = layout.buildDirectory.file('native-compatibility/run/logs/latest.log').get().asFile
     tasks.named('runNativeGameTestServer').configure {
+        dependsOn tasks.named('runGameTestServer')
         doLast {
-            def log = layout.buildDirectory.file('native-compatibility/run/logs/latest.log').get().asFile
-            if (!log.exists() || !(log.text =~ /All \d+ required tests passed/).find())
-                throw new GradleException('Create-only compatibility tests did not pass; inspect ' + log)
+            if (!nativeGameTestLog.exists() || !(nativeGameTestLog.text =~ /All \d+ required tests passed/).find())
+                throw new GradleException('Create-only compatibility tests did not pass; inspect ' + nativeGameTestLog)
         }
     }
 }
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
+if (providers.gradleProperty('jeiClientTest').isPresent()) {
+    sourceSets {
+        jeiClientTest {
+            compileClasspath += sourceSets.main.output
+            runtimeClasspath += sourceSets.main.output
+        }
+    }
+    configurations {
+        jeiClientTestImplementation.extendsFrom implementation
+        jeiClientTestCompileOnly.extendsFrom compileOnly
+        jeiClientTestRuntimeOnly.extendsFrom runtimeClasspath
+    }
+    if (providers.gradleProperty('emiClientTest').isPresent()) {
+        sourceSets.jeiClientTest.java.exclude('**/JeiCannonClientTest.java')
+        dependencies {
+            jeiClientTestCompileOnly files('build/emi-reference/emi-1.1.24.jar')
+            localRuntime files('build/emi-reference/emi-1.1.24.jar')
+            if (!providers.gradleProperty('emiWithoutAddon').isPresent())
+                localRuntime files('build/emi-reference/emi_create_schematics-1.1.0.jar')
+        }
+    } else {
+        sourceSets.jeiClientTest.java.exclude('**/EmiCannonClientTest.java')
+    }
+    neoForge.addModdingDependenciesTo(sourceSets.jeiClientTest)
+    neoForge.mods {
+        better_schematics_jei_client_tests { sourceSet sourceSets.jeiClientTest }
+    }
+    // Keep the client-only test mod out of the preceding dedicated GameTest server.
+    neoForge.runs.gameTestServer.loadedMods = [neoForge.mods.getByName(project.mod_id)]
+    neoForge.runs {
+        jeiClientTest {
+            client()
+            sourceSet = sourceSets.jeiClientTest
+            loadedMods = [project.neoForge.mods.getByName(project.mod_id),
+                          project.neoForge.mods.getByName('better_schematics_jei_client_tests')]
+            gameDirectory = layout.buildDirectory.dir('jei-client-test/run')
+            programArguments.addAll(['--username', 'CannonJeiTest', '--quickPlaySingleplayer', 'jei-materials',
+                                     '--width', '1600', '--height', '1000'])
+        }
+    }
+    def jeiTestOptions = layout.buildDirectory.file('jei-client-test/run/options.txt').get().asFile
+    def jeiTestResult = layout.buildDirectory.file('jei-client-test/run/jei-client-test-result.json').get().asFile
+    def prepareJeiClientWorld = tasks.register('prepareJeiClientWorld', Copy) {
+        dependsOn tasks.named('runGameTestServer')
+        from(layout.projectDirectory.dir('run/world'))
+        into(layout.buildDirectory.dir('jei-client-test/run/saves/jei-materials'))
+        exclude 'session.lock'
+        doLast {
+            jeiTestOptions.text = '''guiScale:2
+renderDistance:6
+simulationDistance:5
+maxFps:60
+enableVsync:false
+soundCategory_master:0.0
+onboardAccessibility:false
+tutorialStep:none
+pauseOnLostFocus:false
+fullscreen:false
+'''
+        }
+    }
+    tasks.named('runJeiClientTest').configure {
+        dependsOn prepareJeiClientWorld
+        doFirst { jeiTestResult.delete() }
+        doLast {
+            if (!jeiTestResult.exists() || !jeiTestResult.text.contains('"passed":true'))
+                throw new GradleException('JEI client integration test did not pass; inspect ' + jeiTestResult)
+        }
+    }
+}
+
 neoForge.ideSyncTask generateModMetadata
 
 tasks.withType(JavaCompile).configureEach {
