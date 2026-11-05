@@ -11,6 +11,10 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 /** Avoids resolving absent optional addon targets and older JEI APIs. */
 public final class JeiMixinPlugin implements IMixinConfigPlugin {
     @Override public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.endsWith(".BlueprintedIconButtonMixin")) {
+            var mods = FMLLoader.getLoadingModList();
+            return mods != null && mods.getModFileById("create_blueprinted") != null;
+        }
         if (mixinClassName.endsWith(".TransmissionJointBlockEntityMixin")
                 || mixinClassName.endsWith(".TransmissionToolgunNoticeMixin")) {
             var mods = FMLLoader.getLoadingModList();

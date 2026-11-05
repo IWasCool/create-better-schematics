@@ -1,111 +1,42 @@
 # Addon schematic compatibility
 
-This documents the initial **0.0.1** release across NeoForge, Forge and Fabric. The cleanup regression run passed 197 required NeoForge GameTests; the November 3 selected-addon regression passed 363, and the full-pack production-JAR client smoke passed 34 checks. Earlier dated checks and evidence paths below record local development validation; numbers in historical log filenames are not published release versions.
+This describes **0.0.2**. The main build targets NeoForge 1.21.1 / Create 6.0.10. The companions target Forge 1.20.1 / Create 6.0.8 and Fabric 1.20.1 / Create Fabric 6.0.8.1. Support covers the fields and placement paths listed below; a successful startup does not certify every feature of an addon.
 
-## November 3, 2026 selected-addon regression
+## Installation and shared files
 
-An isolated test setup copied 58 selected installed addon/dependency JARs from the current Create New World instance. With Minecraft 1.21.1, NeoForge 21.1.256, Create 6.0.10, Flywheel 1.0.6 and Ponder 1.0.82, **all 363 required GameTests passed**. Create and Ponder match the installed artifacts byte for byte; the explicit Flywheel test override matches the installed 1.0.6 artifact. Evidence: `build/release-modpack-gametests.log`; selected JARs: `build/release-modpack-test-mods/manifest.json`.
+Local saving and Schematic Table mod inspection work with Better Schematics installed only on the client. Configuration that a server does not send to its client cannot be recovered by a client-only addon. Install Better Schematics on the destination server for extended placement fixes, and on both peers for the NeoForge skip picker and material export. All five network channels are optional; stock Create peers can still connect. The mod adds no block-state property or required structure-processor registry entry.
 
-The run exercises the current Transmission & Linkage 0.2.9, Crafts & Additions 1.7.2, Radar 5.0.3, Gadgets & Gizmos prerelease 4 bundle, and Sable 2.0.6 alongside the other selected integrations. The test classpath also includes pinned Tom's Storage 2.4.2, which is absent from the installed pack. This is coverage for the tested configuration, transformation, material-payment and placement cases, rather than every feature of the full 183-JAR pack. Different totals in earlier runs reflect different optional-addon selections.
+Files remain ordinary Create `.nbt` structures. Native settings and compatible blocks can be loaded by stock Create. Supported Create 6 cross-version transfers include both legacy and modern item representations; the companions adapt supported fields in memory without rewriting the file. This is not a general Minecraft downgrade. Both instances need compatible versions of the blocks and addons used by the schematic.
 
-## November 3, 2026 full-pack client checks
+Capture a fresh schematic after installation. Select both endpoints and backing blocks for connected gauges, wires or rods. Out-of-selection connections are omitted. Older schematics without gauge-position metadata cannot reliably relocate gauge connections. Fabric fluid thresholds are converted when the source unit is known; older files without that information retain their recorded amounts and need checking.
 
-An isolated copy of the complete 183-top-level-JAR pack used the production `create_better_schematics-0.0.1.jar` in place of the older installed copy, plus a test harness. The client loaded 228 mod IDs and **passed all 34 checks** on NeoForge 21.1.256 / Create 6.0.10, with JEI 19.70.0.469 loaded. Actual mouse clicks opened the Schematic Table Mods tab; the checks covered missing-mod file inspection, searching, resizing, refreshing and returning to the selected schematic. They also verified that the Mods tab and Create: Blueprinted 2.2.6's conversion control do not overlap. The tab adjusts its position when Blueprinted is installed.
+## NeoForge controls
 
-Evidence: `build/release-modpack-client/run/release-modpack-client-result.json`. The exact tested release artifact has SHA-256 `2c487ae350e4c33af235f52dbf54b9720dcca9ea979e30cc08e0cf2c1a3131a6`.
+- The Schematic Table's **i** tooltip reads referenced mod IDs directly from the selected file, including missing blocks/items. Missing namespaces appear first in red; installed mods appear green. Scroll over the icon for longer lists and click to refresh. Optional Blueprinted and Schematic Helper controls share the compact tabs.
+- The cannon picker groups encased shafts, cogs and pipes under obtainable items. Applied choices still refer to original block types. Composite costs remain separate and material exports use Create's real requirements. Partially skipped groups remain visible in amber.
+- The picker uses Create's native menu art and Minecraft's creative-inventory scrollbar. Its track is separate and centered beside the full frame. No artwork is bundled. Manual Pause prevents new launches and fuel use with normal supplies or a Creative Crate; Play resumes.
+- JEI **19.53+**, with EMI absent, supports material bookmarks and quantities. Apply refreshes imported materials while preserving personal bookmarks. The server needs Better Schematics but no recipe viewer.
+- With EMI installed, export requires [EMI: Create Schematics](https://modrinth.com/mod/emi-create-schematics) **1.1.0+**, by **LiukRast and swzo**. Its public exporter manages favourites and quantities. Better Schematics bundles neither that addon nor its exporter. EMI takes priority over JEI; missing addon support disables the button with an explanation. Click + again after reconnecting or changing schematics.
 
-A second isolated full-pack client run passed with the same production-JAR hash and JEI **19.70.0.469**, again loading 228 mod IDs. It verified a 130-item material bookmark, automatic refresh after applying skips, Skip all, restoring materials after an empty list, source persistence, preservation of personal bookmarks, button spacing and a scrolling material picker. Evidence: `build/release-validation-0.0.1/modpack-jei-result.json`. The full-pack client checks cover startup and these UI/export interactions; the 363 selected-addon GameTests above provide the stated configuration and placement coverage.
+The current language file is English (`en_us`). Minecraft falls back to it for other languages. Release checks verify all 74 keys, including packet-result messages, and formatting placeholders.
 
-## Schematic Table Mods tab (NeoForge)
+## Core configuration and placement
 
-Select a schematic and open **Mods** beside Refresh to inspect its referenced mod IDs, including blocks, entities, items, fluids and item components. The searchable list marks mods installed on the client and missing namespaces. Inspection reads the saved file directly, so references to missing blocks and items remain visible. This client feature also works on a Create server without Better Schematics.
-
-## Obtainable items in the picker (NeoForge)
-
-The picker uses Create's single-item requirements to group encased shafts, small/large cogwheels, encased pipes and glass pipes under their obtainable item. Counts combine the represented schematic blocks. Belts use the Mechanical Belt item name/icon. Actual exported quantities continue to use the full native requirements, including belt connectors, pulley shafts and composite requirements such as a shaft plus metal girder; a decorative casing does not become a separate hidden item requirement.
-
-Only the client presentation is grouped. Apply still sends each represented original block type through the existing validated skip protocol. Choosing a group skips/unskips all its variants, and the active JEI or delegated EMI export refreshes as before. Existing selections affecting only some variants stay intact and show an amber partial state. Search accepts both the obtainable item and the original block names/IDs. Composite or unavailable addon requirements keep a separate block row rather than guessing their item costs.
-
-Working added buttons show their action name without routine extra help lines. Disabled exports retain their missing dependency/server explanation, including the EMI: Create Schematics requirement. The picker uses Create's inventory frame and Minecraft search textures; only the scrollbar track has a grey fill. The grid and scrollbar are centered together, and the footer controls leave space around the divider.
-
-October 26, 2026 validation: 197 base GameTests passed. A debugger probe confirmed that the real Create requirements produce obtainable shafts, cogs, pipes and belt connectors rather than internal encased items, retaining the additional girder cost for a composite shaft. A live JEI 19.70.0.460 test verified three variants merging into each shaft/cog/pipe group, their exact exported quantities, excluding all shaft variants after Apply, restoring them after Build all, single-line working-button tooltips and a scrolling 71-group picker. A live EMI 1.1.24 / EMI: Create Schematics 1.1.0 test passed the corresponding export and grouped-skip checks with JEI also installed. The missing-addon setup still disabled export and named the requirement. The rendered picker was inspected to verify the original frame/search textures and grey scrollbar track. New tests and generated evidence remain local.
-
-## EMI material export (NeoForge)
-
-When EMI is installed, the cannon's + button is labelled **Send materials to EMI**. It requires the separate [EMI: Create Schematics](https://modrinth.com/mod/emi-create-schematics) addon by **LiukRast and swzo**, version 1.1.0 or newer. A small optional bridge turns the server's material list into Create clipboard entries and invokes the addon's public `ClipboardScreenUtils.load` method, the same method its clipboard button uses. All EMI favourites, quantity display, replacement and persistence belong to that addon. Better Schematics includes no EMI exporter implementation, EMI API dependency or bundled addon.
-
-EMI takes priority over JEI. If the addon is absent or its export method is unavailable, the button stays disabled with an explanatory tooltip; JEI does not provide a fallback. JEI bookmark imports and quantity mixins are disabled whenever EMI is loaded. With EMI absent, the existing JEI integration below remains available.
-
-The server needs Better Schematics to supply cannon materials; neither EMI nor its addon is required on the server. Applied skips are excluded. After exporting, Apply refreshes that cannon's list using the same addon, including an empty list after Skip all. Source selection is held only for the current client level/session: after reconnecting or changing schematics, click + again. The addon's existing clipboard button remains available.
-
-October 26, 2026 validation used the released EMI 1.1.24+1.21.1+neoforge and EMI: Create Schematics 1.1.0 jars. Live client checks passed with EMI alone plus the addon and with EMI, JEI 19.70.0.460 and the addon together: the real button imported 130 stone through the addon, excluded applied skipped blocks, refreshed after Apply, cleared after Skip all, restored after Build all, and retained a personal diamond favourite. With EMI and JEI installed but the addon absent, the button remained disabled, its tooltip named and credited the required addon, and a direct request did not start an export. The separate JEI-only live regression and all 196 base GameTests passed. Test code and downloaded test mods remain excluded from GitHub and the production jar.
-
-Local Transmission & Linkage validation, October 26, 2026: 405 required tests passed with the expanded addon set, including 19 new universal-joint rod tests. The real client also cancelled the Toolgun recommendation handler across four simulated logins. The earlier JEI materials, optional-installation and native-sharing validation is retained below; coverage remains specific to the listed versions and features.
-
-## Optional installation
-
-NeoForge supports Transmission & Linkage 0.2.8 and 0.2.9 universal-joint rods whose two reciprocal endpoints are included in the schematic and have no ship/sublevel references. Both andesite and brass rods retain their material and rest length through rotation and mirroring. A pending connection waits for both copied endpoints and survives save/reload and cannon projectiles; it never targets an original endpoint. Cannon checklists charge for one rod, at a designated endpoint, before the pair can connect. Better Schematics is needed on the side performing placement for this extension. Transmission & Linkage remains optional.
-
-For Transmission & Linkage 0.2.8, Better Schematics suppresses the Toolgun login recommendation at its own handler. Version 0.2.9 removed that handler class, so the optional mixin is inactive there. Other chat messages are unaffected. This does not add Toolgun's ship-blueprint or assembly features: hydraulic links, cross-sublevel rods and hinge assemblies still require the relevant Aeronautics workflow.
-
-The NeoForge client can join a compatible Create server without Better Schematics. All five cannon payloads are optional, and the client checks the negotiated channels before replacing Create's skip-missing button or opening the extended picker. When the addon is absent on the server, saving remains local and Create's normal controls remain available. Installing on both sides enables the existing cannon picker and server placement fixes; singleplayer retains those features through its integrated server.
-
-The addon leaves belt block-state definitions unchanged and registers no structure processor in a synchronized registry. Placement processors are attached directly to Create's in-memory placement settings and are never serialized into shared files. Native belt `Casing` NBT replaces the old addon property; old schematic palettes are migrated into that NBT. Editors that discard NBT cannot preserve the material using stock Create's boolean casing property alone. Existing worlds retain the native casing data already written by Create.
-
-The game tests negotiate the actual registered payloads with each peer missing the addon and with both peers present. A separate stock-Create process compares every network block-state ID against the addon-loaded process. These are automated protocol/registry checks, not a live remote-client connection test.
-
-Client-only capture is limited to loaded chunks and data already synchronized by the server. Server-only addon settings cannot be recovered by a local exporter. Missing blocks/mods and unimplemented Minecraft/Create versions remain unsupported.
-
-## JEI material bookmarks (NeoForge)
-
-The JEI integration refreshes the active imported build list after the server accepts Apply in the skip picker. Skipping removes imported entries and unskipping restores them, including after Skip all emptied the list. The source cannon and schematic are remembered per world/server, so editing another cannon does not replace an unrelated build list. Older sidecars adopt the first applied cannon. Required amounts remain on bookmark icons without an added tooltip line. The footer controls are spaced away from the divider. The centred slots and scrollbar use the original Create frame and search textures, with grey confined to the scrollbar track.
-
-An earlier local live client check passed on JEI 19.70.0.460 using the real skip picker and Apply packets. It covered removing a skipped material, restoring an unskipped material, Skip all, Build all after an empty list, restoring the saved source, migrating an empty older sidecar, retaining personal bookmarks, and scrolling a 67-type schematic. Button and grid positions were checked in the live menu and screenshots. All 196 base GameTests passed, and the production jar built from a separate checkout containing only the selected source changes.
-
-The cannon menu has a + button next to Confirm when JEI 19.53 or newer is installed and EMI is absent. The client uses JEI's ingredient bookmark API; JEI's API-only runtime for other recipe viewers does not activate this integration. Older JEI builds and installations without either supported recipe viewer retain the normal cannon screen.
-
-Better Schematics is required on the server to supply the current cannon's materials. JEI itself is only needed on the client. The two request/reply channels remain optional, so joining a server without this feature continues to work. The button is disabled with an explanatory tooltip when the server lacks these channels.
-
-A separate read-only schematic printer calculates Create's item requirements using the cannon's current placement predicate, including applied skipped block types, replacement options, existing target blocks, double slabs, belt parts and addon item requirements. Required component-specific items stay separate. Quantities are independent of Minecraft's stack limit. Supplies already in attached inventories are not subtracted. If target chunks are unavailable or the list exceeds its bounded payload, the current JEI list is left intact instead of importing an incomplete list.
-
-The import uses ordinary JEI item bookmarks, so recipe and usage lookups still work. A nonempty import reveals both JEI and its bookmark sidebar if either was hidden. Its count overlay applies only to JEI bookmarks. A local sidecar under `config/create_better_schematics/jei-materials` remembers quantities, which bookmarks the importer created, and the source cannon/schematic, separately for each world/server. Applying skips to that imported build refreshes it automatically; changing schematics still requires clicking +. Refreshing replaces previous imported amounts and removes obsolete imported bookmarks, while preserving unrelated or preexisting personal bookmarks. Shared schematic files are unchanged.
-
-Four added game tests check the real cannon material/skip path, stale and closed menu rejection, packet round-trips, amounts over 64, component-specific ingredients, persistence, and refreshing while retaining personal bookmarks. An isolated JEI client test drives the real menu button and packet handlers, checks a 130-item bookmark, changes applied skips, and captures the actual sidebar.
-
-October 26, 2026 local development check: Better Schematics passed the live client test with JEI **19.70.0.460**, using a jar whose SHA-256 matches the installed modpack copy. Importing revealed hidden bookmarks, displayed the 130-item amount, refreshed changed skips, and retained personal bookmarks. All 196 base GameTests also passed with this JEI release loaded. The test result records the actual loaded JEI version. Compilation still targets the 19.53 API. Local client test files and generated results are excluded from this source update and release JAR.
-
-## Ordinary shared schematics and automatic compatibility
-
-Files saved with Better Schematics remain standard Create/Minecraft `.nbt` structures. The native `DataVersion`, palette, modern item components, blocks and entities are retained. The optional `CreateBetterSchematics` compound records `FormatVersion = 1`, `SourceDataVersion` and `SourceLoader`. Compatibility item fields supplement the native fields rather than replacing them. Legacy exports also include equivalent native modern count/components for supported item data, list filters and built-in attribute filters. No Better Schematics block, entity, block-state property or custom structure format is required to read the file.
-
-Same-version recipients can use Create's normal schematic placement without Better Schematics. A separate test mod runs with Better Schematics and its mixins entirely absent, loads fresh enhanced exports, and checks mechanical-arm targets, native threshold values, inversion, stack display, named deny-list filters and belt casing materials. A stock Schematicannon flight preserves the same threshold/filter settings. Unknown Power Grid wire entities are skipped when that addon is absent, and the supported machines still build. Separate stock-Create recipients also read real exports in both directions between Forge 1.20.1 and NeoForge 1.21.1, including list filters and built-in attribute predicates without any importer installed.
-
-With a matching companion installed, the same native file is adapted automatically in memory on Forge or Fabric 1.20.1 / Create 6. This includes legacy arm positions and filter aliases, conventional tag namespaces, and explicit millibucket/droplet conversions. The source file is never rewritten. Unknown fluid units are preserved rather than guessed; older fluid thresholds may need checking when moving between loaders. New format/version metadata provides a migration point for future ports; it does not certify unimplemented Minecraft or Create versions.
-
-| Environment | Tested versions | Result | Evidence |
-| --- | --- | --- | --- |
-| NeoForge selected-addon regression, November 3 | Minecraft 1.21.1, Create 6.0.10, NeoForge 21.1.256, Flywheel 1.0.6 | 363 required tests passed | `build/release-modpack-gametests.log` |
-| Create-only recipient | Same Minecraft/Create, Better Schematics absent | Six native sharing, cross-version and registry checks | `build/native-compatibility/run/logs/latest.log` |
-| Forge recipient | Minecraft 1.20.1, Create 6.0.8, Forge 47.4.10 | Seven required tests passed, including native modern-component export | `forge/run-gametest/logs/latest.log` |
-| Stock Forge recipient | Minecraft 1.20.1, Create 6.0.8, Better Schematics absent | Two required tests passed using fresh NeoForge machine and belt exports | `forge/build/native-compatibility/run/logs/latest.log` |
-| Fabric recipient | Minecraft 1.20.1, Create Fabric 6.0.8.1+build.1744, Fabric Loader 0.17.3, Fabric API 0.92.6 | Five required tests passed, including direct native-file and fluid-unit imports | `fabric/run-porter-gametest/build/gametest-results.xml` |
-
-Tests exercise native and historical converted files, real schematic printers, rotation/mirroring, serialized cannon projectiles, delayed arm targets, named/styled filter data, source-file conservation and world reloads. A regression guard checks that serializing a threshold switch never queries its observed inventory or loads a neighboring chunk. Test-only code and fixtures are excluded from the production companions; the Create-only test mod and historical explicit schematic conversion exporter are excluded from the NeoForge JAR.
-
-Extended placement behavior still requires the relevant implementation. Transformed wire endpoints, recreated junction identities, late arm-target retries and relocated gauge networks cannot be supplied by data alone. Recipients need compatible blocks and mods; unsupported or missing blocks cannot be supplied by the schematic. Core data readability does not certify every addon configuration without Better Schematics.
-
-The full bundled Create Fabric suite was previously checked: `TestFluids.thresholdSwitch` and `TestItems.attributeFilters` fail both with and without the companion. The companion-disabled baseline ran 61 tests and reproduced both failures (`build/porter-fabric-baseline-results.xml`, `build/porter-fabric-baseline.log`). The normal companion task isolates its five compatibility tests; it does not claim those upstream failures are fixed.
+- Mechanical arms preserve target coordinates, selection modes and delayed destinations. Destinations follow rotations/mirrors and retry when their blocks become available.
+- Threshold switches preserve limits, inversion and stack display. Legacy Create 0.5.1 percentage settings migrate when destination capacity becomes available; Create 6 amount fields take precedence.
+- List and built-in Create 6 attribute filters preserve rules, inversion, mode and supported nested item data. Custom names, lore, damage, enchantments and custom data receive supported legacy equivalents. Addon-defined attributes and unsupported component formats need their own adapters.
+- Factory Gauges preserve four panel slots, filters, targets, units, frequencies, recipe addresses/counts, crafting layouts, promise expiry settings and gauge/redstone-link connections. Endpoints and panel slots transform with the schematic. Pending source deliveries are excluded.
+- Belt casings use Create's native `Casing` NBT. Older schematics with the addon's former material property migrate when read/exported. Tools that discard block-entity NBT also discard casing material.
+- Chain-drive regression coverage exercises 150 layouts and placement cases across connection axes, shaft axes, rotations, mirrors, projectiles and reloads. These pass with Create 6.0.10's native orientation behavior; no extra chain-orientation patch is included.
+- Power Grid wires preserve transformed endpoints/routes, colors, paid item counts and supported hanging-wire sag. Copies receive fresh junction identities. NeoForge and Forge tests check complete payment for a 130-item wire and exact returns on removal.
+- Transmission & Linkage universal-joint rods copy within one world when both endpoints are selected. Rotated/mirrored copies consume one rod per connection. Hydraulic and cross-sublevel links still need reconnecting. Version 0.2.8's repeated Toolgun recommendation is suppressed; 0.2.9 removed that handler.
 
 ## Verified NeoForge features
 
-The earlier tests use Minecraft 1.21.1, NeoForge 21.1.255, and Create 6.0.10; the November 3 selected-addon run uses NeoForge 21.1.256 with the same Minecraft/Create versions. Tests exercise real block entities, export actual `.nbt` files, load them with Create's schematic printer, apply a rotation or rotation plus mirror, restore serialized cannon projectiles, and reload the resulting block entities. Native addon support is retained and tested alongside the configuration profiles.
-
-Create's native chain-drive coverage adds 150 tests: 144 geometric combinations of connection axis, shaft axis, rotation, mirror and placement path, plus six interleaved-processor placement cases. Both encased chain drives and adjustable chain gearshifts retain their shaft axis, connection plane and end/middle roles, and remain connected after ticking and reloads. The processor cases wait for the whole cannon build and all projectiles to finish before checking the final twists. These layouts did not reproduce a chain-orientation defect, so no additional orientation patch is claimed.
+The matrix records tested addon versions. The latest selected-addon run uses Minecraft 1.21.1, NeoForge 21.1.256, Create 6.0.10, Flywheel 1.0.6 and Ponder 1.0.82. Tests export actual files, use Create's printer, transform placements, restore saved cannon projectiles and reload block entities. Native safe-NBT writers remain active alongside added profiles.
 
 | Addon | Tested version | Verified scope |
 | --- | --- | --- |
-| NeoForge with chain-drive coverage and installed content | 374 required tests passed, including 150 chain-drive checks | `build/chain-drive-addons.log` |
-| NeoForge base with chain-drive coverage | 184 required tests passed | `build/chain-drive-base.log` |
 | Power Grid | 0.6.2 | Existing wire transfer/endpoint transforms/material costs, meter units, display equations/units/prefixes, button timeout and normally-closed setting. Wires also have Forge cross-loader tests. |
 | Tom's Storage | 2.4.2 | Emitter filter/threshold/comparison, hopper ghost filter, cable channel, painted trim and proxy camouflage. |
 | Crafts & Additions | 1.6.0; 1.7.2 (November 3) | Motor speed and direction. |
@@ -138,18 +69,6 @@ Create's native chain-drive coverage adds 150 tests: 144 geometric combinations 
 | [Storage Drawers](https://modrinth.com/mod/storagedrawers) | 13.11.4 | Standard one-, two-, and four-slot drawers retain remembered item types, locks, quantity/concealment settings, priority and suspension. Copied drawers start with zero stored items and no installed upgrades. |
 | [Sophisticated Storage](https://modrinth.com/mod/sophisticated-storage) | 1.6.8.2196 | Barrel, chest and limited-barrel memory filters, item-data matching, no-sort slots, sorting mode, item-display settings and lock/display options. Inventories, upgrades, expanded capacities and linked-storage identities are omitted. |
 
-There are 81 transfer fixtures across these 31 mod IDs. Ten additional working-cannon fixtures cover Copycats material payment, the two Diesel Generators upgrades, a block from each supported factory/storage mod, and three Transmission & Linkage blocks. The eight transmission fixtures run through both creative placement and saved cannon projectiles, with rotation, mirroring, reloads, and checks that source settings and links stay intact. A separate Mekanism test checks all 72 facing/rotation/mirror combinations against its native `RelativeSide` API. The storage cases seed source inventories and verify that ghost filters remain non-extractable after cannon placement and reload. The shared registry also has tests for nested/list field selection, inherited profiles, defensive copies, placement defaults, identity protection, and rejecting unpriced installed parts.
-
-Nineteen additional universal-joint tests cover both rod materials across all three mirror choices with rotation, creative placement, delayed saved projectiles and paid working cannons. Pending connections survive a save/reload before the second endpoint arrives; clipped selections remain disconnected and source rods stay intact. The material adapter wraps the completed native requirement calculation so Azimuth's return hook cannot bypass the rod charge or erase other addons' requirements.
-
-The four factory/storage mods were selected from established projects with millions of downloads on their linked official Modrinth pages. Their exact artifacts and the required GuideME 21.1.19 / Sophisticated Core 1.5.17.2426 libraries are pinned with SHA-512 hashes in `tools/popular-mod-test-lock.json`. They remain optional at runtime.
-
-## Other audited content
-
-Aeronautics/Offroad, Aeroworks, Integrated Farming, Central Kitchen, Create Deco, Create Nuclear, Create Dragons Plus, Create BB, Contraption Terminals, Vibrant Vaults, Power Loader, Teleporters, Hypertubes, Tracks, Linear Bearing, Coasters, Struts, Rolling Tones, Trading Floor, Garnished, Interiors and the installed schematic-helper/integration mods were inspected or included in the content loading run. Decorative blocks and settings already handled by Create's block-state/safe-NBT APIs continue to use those paths. Loading successfully is not a feature-complete certification of each addon.
-
-Metalwork 3.0.0 includes an unused `GenericDisplayBlockEntity` library class with no registered block or other class reference in that JAR. It is not advertised as a tested display feature. Its registered decorative content uses the ordinary block-state path.
-
 ## Remaining limits
 
 - Physical graphs need their own relocation and material adapters. Power Grid wires and Create gauges have those adapters. This release does not add adapters for Crafts & Additions wire networks, Struts/Coaster connections, Hypertube graphs, ship/sublevel attachments, flight/navigation routes, or Radar target references.
@@ -162,53 +81,53 @@ Metalwork 3.0.0 includes an unused `GenericDisplayBlockEntity` library class wit
 
 ## Validation and reproduction
 
-| Run | Latest result | Evidence |
-| --- | --- | --- |
-| November 3 full-pack production-JAR client smoke, 183 pack JARs plus test harness | 34 checks passed; 228 loaded mod IDs; Mods tab and Blueprinted 2.2.6 controls coexist | `build/release-modpack-client/run/release-modpack-client-result.json` |
-| November 3 full-pack JEI 19.70.0.469 client test, same production JAR | Passed export, automatic skip refresh, persistence, bookmark preservation and menu layout checks | `build/release-validation-0.0.1/modpack-jei-result.json` |
-| November 3 selected installed addons, NeoForge 21.1.256 / Flywheel 1.0.6 | 363 required tests passed; 58 selected JARs plus pinned Tom's Storage fallback | `build/release-modpack-gametests.log` |
-| NeoForge development run with Transmission & Linkage 0.2.8 and the expanded content set | 405 required tests passed | `build/transmission-rods-0.0.8-expanded.log` |
-| NeoForge development run without optional addons | 196 required tests passed; production JAR built | `build/transmission-rods-0.0.8-base.log` |
-| NeoForge development run with Transmission & Linkage and its required bundled content | 289 required tests passed | `build/transmission-rods-0.0.8-minimal.log` |
-| NeoForge client with Transmission & Linkage 0.2.8 | Four recommendation-handler calls cancelled | `build/transmission-notice-client/result.json` |
-| NeoForge with Transmission & Linkage 0.2.8 and installed content | 224 required tests passed, including 35 transmission checks | `build/transmission-linkage-after.log` |
-| NeoForge with expanded content set and the four new mods | 207 required tests passed | `build/popular-compat-expanded.log` |
-| NeoForge with the four new mods and core integrations | 94 required tests passed | `build/popular-compat-second.log` |
-| NeoForge without optional addons | 34 required tests passed | `build/popular-compat-base.log` |
-| NeoForge with Power Grid, Tom's Storage, Crafts & Additions | 61 required tests passed | `build/anti-dupe-gametest.log` |
-| Forge without optional addons | 3 required tests passed | `build/popular-compat-forge-base.log` |
-| Forge with Power Grid | 6 required tests passed | `build/popular-compat-forge-addons.log` |
+Final local checks on November 5, 2026:
+
+| Check | Result |
+| --- | --- |
+| NeoForge base suite, including Creative Crate/normal-fuel pause checks | 199 required tests passed |
+| NeoForge selected installed addons, with pinned Tom's Storage fallback | 365 required tests passed |
+| Stock Create recipient without Better Schematics | 6 required tests passed |
+| Forge with Power Grid | 10 required tests passed |
+| Stock Forge recipient without Better Schematics | 2 required tests passed |
+| Fabric companion | 5 required tests passed |
+| Audited production JAR in a real client, with Blueprinted/Schematic Helper | 109 checks passed |
+| Same production JAR with the optional Core dark-theme integration | 110 checks passed |
+
+The selected-addon run uses 58 copied addon/dependency JARs plus the pinned Tom's Storage 2.4.2 fallback, covering the listed configuration, transformation, payment and placement cases. This is not certification of every feature in the full pack. Local log evidence is kept in ignored `build/release-final-checks/`; generated results and downloaded mods are not release content.
+
+The final client checks load the audited production JAR, inspect actual resources, exercise the tooltip tabs and optional controls, and capture normal/compact layouts. Normal and dark screenshots were visually reviewed. Earlier JEI/EMI client checks covered quantity exports, automatic skip refresh, restoring an empty list and retaining personal bookmarks; those are prior local checks, separate from the final runs above.
+
+Core tests and resources are in `src/testFixtures`, outside production sources. Compatibility and companion suites use their own test directories. These tests have executable assertions and are excluded from release JARs. The captured Forge export used by the stock NeoForge recipient is included in test resources, so that suite also works from a clean checkout. GitHub Actions builds and audits all three loader artifacts and runs the core/Create-only NeoForge regressions.
+
+Run core tests with a Java 21 JDK:
+
+```powershell
+.\gradlew.bat -PgameTests runGameTestServer
+.\gradlew.bat -PgameTests -PnativeCompatibilityTests runNativeGameTestServer
+```
+
+Prepare an isolated addon test set from an installed pack, then run:
 
 ```powershell
 py -3 tools/prepare_addon_test_mods.py --mods-dir 'C:/path/to/instance/mods'
-# Optional: add pinned addons/dependencies from a separate directory.
-py -3 tools/prepare_addon_test_mods.py --mods-dir 'C:/path/to/instance/mods' --additional-mods-dir 'C:/path/to/extra-jars'
 .\gradlew.bat -PcompatTests -PcompatModsDir=build/addon-test-mods runGameTestServer
 ```
 
-The November 3 selected-addon run used:
+For the tested NeoForge/Flywheel combination, add `-Pneo_version=21.1.256 -PcompatFlywheelVersion=1.0.6`. To add the pinned factory/storage mods, run `py -3 tools/prepare_popular_mod_test_mods.py` and supply `--additional-mods-dir build/popular-mod-test-mods` to the preparation tool. Their versions and SHA-512 hashes are in `tools/popular-mod-test-lock.json`.
+
+Run the companions with their matching wrappers:
 
 ```powershell
-py -3 tools/prepare_addon_test_mods.py --mods-dir 'C:/path/to/instance/mods' --output build/release-modpack-test-mods
-.\gradlew.bat -PcompatTests -PcompatModsDir=build/release-modpack-test-mods -Pneo_version=21.1.256 -PcompatFlywheelVersion=1.0.6 runGameTestServer
+.\gradlew.bat -p forge -PcompatTests runGameTestServer
+.\fabric\gradlew.bat -p fabric runGametest
 ```
 
-Power Grid, Architectury, Crafts & Additions and Tom's Storage use matching files from the selected directory when present, with the pinned dependencies as fallbacks. The installed Better Schematics JAR is excluded in favor of the source build.
+Forge's development GameTest task serializes early mod initialization to avoid the Create/Registrate startup failure seen with parallel initialization. The task requires a fresh passing log, so a mod-loading error cannot count as success. Power Grid's optional native solver is unavailable in this Windows test environment; the tests use its Java fallback.
 
-To reproduce the four popular-mod checks without an installed modpack:
+To check stock Forge sharing after a NeoForge producer run, use `./gradlew -p forge -PnativeCompatibilityTests runNativeGameTestServer`. The producer writes fresh fixtures into `build/shareable-fixtures`. The Fabric task isolates its five companion tests; it does not run the entire bundled Create suite, whose threshold-switch/attribute-filter failures were previously reproduced with the companion absent.
 
-```powershell
-py -3 tools/prepare_popular_mod_test_mods.py
-.\gradlew.bat -PcompatTests -PcompatModsDir=build/popular-mod-test-mods runGameTestServer
-```
-
-To combine those pinned mods with an installed content pack, use `--additional-mods-dir build/popular-mod-test-mods --output build/popular-expanded-test-mods` with `prepare_addon_test_mods.py`, then set `-PcompatModsDir=build/popular-expanded-test-mods`. The preparation tool recognizes both uppercase and lowercase NeoForge dependency declarations, including AE2's GuideME dependency.
-
-The preparation tool never changes the input modpack. It copies content addons and required dependencies into an isolated build directory and writes a manifest. A stale output directory is rejected instead of silently retaining extra JARs. The test-only mixin limits automatic GameTest discovery so unrelated addons' development tests do not load their missing optional test dependencies. The build also requires an actual passing GameTest summary, because NeoForge can otherwise exit with status zero after a loading error.
-
-The extended run uses a file URI for logging to accommodate Numismatics' development startup on Windows. The optional test source set and dependencies are excluded from production JARs.
-
-To exercise the real optional Toolgun-notice target, use `-PcompatTests -PtransmissionClientTest -PcompatModsDir=build/transmission-linkage-test-mods runTransmissionNoticeClientTest`. The supplied directory needs Transmission & Linkage 0.2.8, Aeronautics 1.3.2, Sable 2.0.5 and their bundled dependencies; the client additionally needs Flywheel 1.0.6 (bundled with the installed Create distribution). This isolated client task uses serial mod initialization and exits after writing its result JSON; it does not join or modify a player's world.
+Build and audit release artifacts with the [README commands](README.md#building-and-checking). Source/JAR checks reject duplicate or missing language keys, invalid placeholders, version mismatches, missing mixin classes, incorrect Java bytecode targets, bundled artwork and test/development content.
 
 ## Extending a profile
 

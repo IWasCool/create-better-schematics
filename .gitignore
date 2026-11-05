@@ -59,7 +59,5 @@ src/compatTest/
 src/nativeCompatibilityTest/
 **/src/gametest/
 **/src/nativeCompatibilityTest/
-**/gametest/
-**/fixtures/
 __pycache__/
 *.py[cod]

@@ -341,6 +341,53 @@ public class CannonSkipGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void manualPauseWithCreativeCrate(GameTestHelper helper) throws IOException {
+        verifyManualPauseAndResume(helper, true);
+    }
+
+    @GameTest(template = "empty")
+    public static void manualPauseWithGunpowder(GameTestHelper helper) throws IOException {
+        verifyManualPauseAndResume(helper, false);
+    }
+
+    private static void verifyManualPauseAndResume(GameTestHelper helper, boolean creative) throws IOException {
+        try (Fixture fixture = fixture(helper)) {
+            var cannon = fixture.cannon();
+            var level = helper.getLevel();
+            Block supplyBlock = creative ? BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:creative_crate")) : Blocks.BARREL;
+            level.setBlock(cannon.getBlockPos().below(), supplyBlock.defaultBlockState(), Block.UPDATE_CLIENTS);
+            if (!creative) {
+                var supply = (BarrelBlockEntity) level.getBlockEntity(cannon.getBlockPos().below());
+                supply.setItem(0, new ItemStack(Items.STONE, 64));
+                supply.setItem(1, new ItemStack(Items.OAK_STAIRS, 64));
+                supply.setItem(2, new ItemStack(Items.BARREL, 64));
+            }
+            cannon.printer.loadSchematic(fixture.blueprint(), level, true);
+            cannon.remainingFuel = creative ? 0 : 100;
+            cannon.hasCreativeCrate = creative;
+            FakePlayer player = openMenu(helper, cannon);
+            new com.simibubi.create.content.schematics.cannon.ConfigureSchematicannonPacket(
+                    com.simibubi.create.content.schematics.cannon.ConfigureSchematicannonPacket.Option.PAUSE, true).handle(player);
+            int before = cannon.blocksPlaced;
+            BlockPos targetBefore = cannon.printer.getCurrentTarget();
+            for (int tick = 0; tick < 40; tick++)
+                cannon.tick();
+            int after = cannon.blocksPlaced;
+            helper.assertTrue(cannon.state == SchematicannonBlockEntity.State.PAUSED && before == after,
+                    "Manual pause must prevent new launches with normal fuel or a Creative Crate");
+            helper.assertTrue(targetBefore.equals(cannon.printer.getCurrentTarget()) && cannon.flyingBlocks.isEmpty(),
+                    "The paused printer must not advance its target or launch new blocks");
+            helper.assertTrue(cannon.remainingFuel == (creative ? 0 : 100), "Pausing must not consume fuel");
+            new com.simibubi.create.content.schematics.cannon.ConfigureSchematicannonPacket(
+                    com.simibubi.create.content.schematics.cannon.ConfigureSchematicannonPacket.Option.PLAY, true).handle(player);
+            cannon.tick();
+            helper.assertTrue(cannon.state == SchematicannonBlockEntity.State.RUNNING && cannon.blocksPlaced > before,
+                    "The native Play command must resume a manually paused cannon");
+        }
+        helper.succeed();
+    }
+
     private static FakePlayer openMenu(GameTestHelper helper, SchematicannonBlockEntity cannon) {
         FakePlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "skip_dupe_test"));
         player.setGameMode(GameType.SURVIVAL);

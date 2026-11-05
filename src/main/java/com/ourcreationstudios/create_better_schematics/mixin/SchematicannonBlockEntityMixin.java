@@ -53,8 +53,16 @@ abstract class SchematicannonBlockEntityMixin implements CannonSkipAccess {
             cir.setReturnValue(false);
     }
 
-    @Inject(method = "tickPrinter", at = @At("HEAD"), remap = false)
+    @Inject(method = "tickPrinter", at = @At("HEAD"), cancellable = true, remap = false)
     private void betterSchematics$releaseSkippedMissingBlock(CallbackInfo ci) {
-        CannonSkipService.resumeSkippedTarget((SchematicannonBlockEntity) (Object) this);
+        var cannon = (SchematicannonBlockEntity) (Object) this;
+        // Create's ordinary pause guard requires positive fuel. Creative Crates
+        // use zero fuel, so respect the explicit Pause command before that guard.
+        // Automatic missing-item, fuel and unloaded-target pauses keep retrying.
+        if (cannon.state == SchematicannonBlockEntity.State.PAUSED && "paused".equals(cannon.statusMsg)) {
+            ci.cancel();
+            return;
+        }
+        CannonSkipService.resumeSkippedTarget(cannon);
     }
 }

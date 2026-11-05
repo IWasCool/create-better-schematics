@@ -39,8 +39,15 @@ public final class CannonSkipScreen extends Screen {
     private static final int COLUMNS = 9;
     private static final int SLOT_SIZE = 18;
     private static final int PANEL_WIDTH = 214;
-    private static final int CONTENT_WIDTH = COLUMNS * SLOT_SIZE + 20;
-    private static final int GRID_LEFT = (PANEL_WIDTH - CONTENT_WIDTH) / 2;
+    // Create's table texture has an eight-pixel arrow beyond the rectangular body.
+    private static final int TABLE_BODY_WIDTH = PANEL_WIDTH - 8;
+    private static final int SCROLLBAR_GAP = 8;
+    private static final int SCROLLBAR_WIDTH = 14;
+    private static final int CONTENT_WIDTH = COLUMNS * SLOT_SIZE + SCROLLBAR_GAP + SCROLLBAR_WIDTH;
+    private static final int INVENTORY_PADDING = 7;
+    private static final int INVENTORY_WIDTH = COLUMNS * SLOT_SIZE + INVENTORY_PADDING * 2;
+    private static final int BLOCK_AREA_WIDTH = INVENTORY_WIDTH + SCROLLBAR_GAP + SCROLLBAR_WIDTH;
+    private static final int GRID_LEFT = (TABLE_BODY_WIDTH - BLOCK_AREA_WIDTH) / 2 + INVENTORY_PADDING;
     private static final int GRID_TOP = 73;
     private static final int TEXT_COLOR = 0xeeeeee;
 
@@ -245,7 +252,7 @@ public final class CannonSkipScreen extends Screen {
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
         renderPanel(graphics);
-        graphics.drawString(font, title, panelLeft + (PANEL_WIDTH - font.width(title)) / 2,
+        graphics.drawString(font, title, panelLeft + (TABLE_BODY_WIDTH - font.width(title)) / 2,
                 panelTop + 4, AllGuiTextures.FONT_COLOR, false);
         graphics.drawString(font, text("description"), panelLeft + 8, panelTop + 20, TEXT_COLOR);
         graphics.drawString(font, text("inventory"), panelLeft + GRID_LEFT + 1, panelTop + 62, 0x404040, false);
@@ -299,7 +306,7 @@ public final class CannonSkipScreen extends Screen {
         graphics.blit(footer.location, panelLeft, panelTop + panelHeight - 30, footer.getStartX(),
                 footer.getStartY() + footer.getHeight() - 30, PANEL_WIDTH, 30);
         AllGuiTextures inventory = AllGuiTextures.PLAYER_INVENTORY;
-        int x = panelLeft + GRID_LEFT - 7;
+        int x = panelLeft + GRID_LEFT - INVENTORY_PADDING;
         int y = panelTop + 56;
         graphics.blit(inventory.location, x, y, 0, 0, inventory.getWidth(), 17);
         for (int row = 0; row < rows; row++)
@@ -308,11 +315,16 @@ public final class CannonSkipScreen extends Screen {
     }
 
     private final class BlockGrid extends AbstractWidget {
-        private static final int SCROLL_X = 170;
+        private static final int SCROLL_X = COLUMNS * SLOT_SIZE + INVENTORY_PADDING + SCROLLBAR_GAP;
+        // Center against the full rectangular frame (17px title + 4px footer),
+        // excluding its decorative bottom pointer, rather than only the slots.
+        private static final int SCROLL_Y = -7;
         private static final int SCROLLER_HEIGHT = 15;
         private static final ResourceLocation SLOT = ResourceLocation.withDefaultNamespace("container/slot");
         private static final ResourceLocation SCROLLER = ResourceLocation.withDefaultNamespace("container/creative_inventory/scroller");
         private static final ResourceLocation SCROLLER_DISABLED = ResourceLocation.withDefaultNamespace("container/creative_inventory/scroller_disabled");
+        private static final ResourceLocation SCROLL_TRACK = ResourceLocation.withDefaultNamespace(
+                "textures/gui/container/creative_inventory/tab_items.png");
 
         private List<CannonBlockGroup> shown = List.of();
         private List<ItemStack> icons = List.of();
@@ -321,7 +333,7 @@ public final class CannonSkipScreen extends Screen {
         private boolean draggingScroll;
 
         private BlockGrid(int x, int y) {
-            super(x, y, SCROLL_X + 12, rows * SLOT_SIZE, text("inventory"));
+            super(x, y, SCROLL_X + SCROLLBAR_WIDTH, rows * SLOT_SIZE, text("inventory"));
         }
 
         private void populate(List<CannonBlockGroup> shown) {
@@ -401,12 +413,17 @@ public final class CannonSkipScreen extends Screen {
                     graphics.pose().popPose();
                 }
             }
-            graphics.fill(getX() + SCROLL_X, getY(), getX() + SCROLL_X + 12, getBottom(), 0xff8b8b8b);
-            graphics.fill(getX() + SCROLL_X + 1, getY() + 1,
-                    getX() + SCROLL_X + 11, getBottom() - 1, 0xffa9a9a9);
-            int thumbY = maxScrollRow() == 0 ? 0 : (height - SCROLLER_HEIGHT) * scrollRow / maxScrollRow();
+            int trackX = getX() + SCROLL_X;
+            int trackY = getY() + SCROLL_Y;
+            // Use the creative inventory's inset track so normal and dark packs
+            // supply the matching bevel and fill instead of fixed gray colors.
+            graphics.blit(SCROLL_TRACK, trackX, trackY, 174, 17, SCROLLBAR_WIDTH, 1);
+            graphics.blit(SCROLL_TRACK, trackX, trackY + 1, SCROLLBAR_WIDTH, height - 2,
+                    174f, 18f, SCROLLBAR_WIDTH, 1, 256, 256);
+            graphics.blit(SCROLL_TRACK, trackX, trackY + height - 1, 174, 128, SCROLLBAR_WIDTH, 1);
+            int thumbY = maxScrollRow() == 0 ? 0 : (height - 2 - SCROLLER_HEIGHT) * scrollRow / maxScrollRow();
             graphics.blitSprite(active && maxScrollRow() > 0 ? SCROLLER : SCROLLER_DISABLED,
-                    getX() + SCROLL_X, getY() + thumbY, 12, SCROLLER_HEIGHT);
+                    trackX + 1, trackY + 1 + thumbY, 12, SCROLLER_HEIGHT);
         }
 
         private String compactCount(int count) {
@@ -419,7 +436,7 @@ public final class CannonSkipScreen extends Screen {
 
         @Override
         public void onClick(double mouseX, double mouseY) {
-            draggingScroll = mouseX >= getX() + SCROLL_X && maxScrollRow() > 0;
+            draggingScroll = overScrollTrack(mouseX, mouseY) && maxScrollRow() > 0;
             if (draggingScroll) {
                 scrollTo(mouseY);
             } else {
@@ -432,8 +449,25 @@ public final class CannonSkipScreen extends Screen {
         }
 
         private void scrollTo(double mouseY) {
-            setScrollRow((int) Math.round((mouseY - getY() - SCROLLER_HEIGHT / 2.0)
-                    / (height - SCROLLER_HEIGHT) * maxScrollRow()));
+            setScrollRow((int) Math.round((mouseY - getY() - SCROLL_Y - 1 - SCROLLER_HEIGHT / 2.0)
+                    / (height - 2 - SCROLLER_HEIGHT) * maxScrollRow()));
+        }
+
+        private boolean overScrollTrack(double mouseX, double mouseY) {
+            return mouseX >= getX() + SCROLL_X && mouseX < getX() + SCROLL_X + SCROLLBAR_WIDTH
+                    && mouseY >= getY() + SCROLL_Y && mouseY < getY() + SCROLL_Y + height;
+        }
+
+        @Override
+        public boolean isMouseOver(double mouseX, double mouseY) {
+            boolean overSlots = mouseX >= getX() && mouseX < getX() + COLUMNS * SLOT_SIZE
+                    && mouseY >= getY() && mouseY < getBottom();
+            return active && visible && (overSlots || overScrollTrack(mouseX, mouseY));
+        }
+
+        @Override
+        protected boolean clicked(double mouseX, double mouseY) {
+            return isMouseOver(mouseX, mouseY);
         }
 
         @Override

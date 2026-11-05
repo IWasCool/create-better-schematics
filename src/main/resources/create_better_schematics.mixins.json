@@ -20,7 +20,7 @@
     "StructureTemplateAccessor",
     "SchematicannonBlockEntityMixin"
   ],
-  "client": ["client.SchematicannonScreenMixin", "client.SchematicTableScreenMixin", "client.JeiBookmarkElementMixin", "client.JeiBookmarkOverlayMixin", "client.TransmissionToolgunNoticeMixin"],
+  "client": ["client.SchematicannonScreenMixin", "client.SchematicTableScreenMixin", "client.SchematicTableTabMixin", "client.SchematicGuiResourcesMixin", "client.BlueprintedIconButtonMixin", "client.JeiBookmarkElementMixin", "client.JeiBookmarkOverlayMixin", "client.TransmissionToolgunNoticeMixin"],
   "injectors": {
     "defaultRequire": 1
   }

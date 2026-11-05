@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.ourcreationstudios.create_better_schematics'
-version = '0.0.1'
+version = '0.0.2'
 base.archivesName = 'create_better_schematics-forge-1.20.1'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 sourceSets.main.java.srcDir('../common/src/main/java')
@@ -79,7 +79,16 @@ tasks.withType(JavaCompile).configureEach {
 
 // Forge can exit successfully after a mod-loading error; require an actual passing test result.
 def forgeGameTestLog = file('run-gametest/logs/latest.log')
+def forgeGameTestConfig = file('run-gametest/config/fml.toml')
 tasks.named('runGameTestServer').configure {
+    doFirst {
+        forgeGameTestLog.delete()
+        // Serialize development initialization to avoid Create/Registrate callback races.
+        forgeGameTestConfig.parentFile.mkdirs()
+        forgeGameTestConfig.text = forgeGameTestConfig.exists()
+                ? forgeGameTestConfig.text.replaceAll(/(?m)^maxThreads\s*=.*$/, 'maxThreads = 1')
+                : 'maxThreads = 1\n'
+    }
     doLast {
         if (!forgeGameTestLog.exists() || !(forgeGameTestLog.text =~ /All \d+ required tests passed/).find())
             throw new GradleException('Forge compatibility tests did not pass; inspect ' + forgeGameTestLog)
