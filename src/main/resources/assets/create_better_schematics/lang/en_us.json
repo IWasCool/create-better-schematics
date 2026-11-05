@@ -32,7 +32,6 @@
   "create_better_schematics.cannon.jei.unavailable": "JEI bookmarks are not available yet.",
   "create_better_schematics.cannon.jei.needs_server": "Install Better Schematics on the server to read this cannon's materials.",
   "create_better_schematics.cannon.jei.needs_schematic": "Insert a deployed schematic first.",
-  "create_better_schematics.cannon.jei.success": "Sent %s material types to JEI.",
   "create_better_schematics.cannon.jei.empty": "No materials are needed. The previous imported build list was cleared.",
   "create_better_schematics.cannon.jei.error.no_schematic": "Insert a schematic in the cannon first.",
   "create_better_schematics.cannon.jei.error.changed": "The schematic changed. Send its materials to JEI again.",
