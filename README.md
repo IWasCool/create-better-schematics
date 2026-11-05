@@ -11,7 +11,7 @@ Mod version: **1.0.0**.
 - Copy supported machine settings, mechanical arm targets, filters, belt casings and Factory Gauge connections.
 - Preserve selected addon configuration, Power Grid wires and same-world Transmission & Linkage universal-joint rods.
 - Inspect a schematic's installed and missing mods from the Schematic Table's **i** tooltip. Scroll over the icon for longer lists; click to refresh.
-- Choose block types to skip in a searchable Schematicannon picker. Encased variants group under their obtainable items. Apply saves choices to the cannon and updates required materials.
+- Choose block types to skip in a searchable Schematicannon picker. Encased variants group under their obtainable items. Apply saves choices to the cannon and updates required materials. Skip choices reset when the schematic finishes.
 - Send material quantities to JEI, or delegate EMI exports to EMI: Create Schematics. Applying skips refreshes an imported list while preserving personal bookmarks.
 
 The NeoForge build includes all features. The Forge companion provides arm/threshold fixes, Factory Gauges, Power Grid wires and shared configuration profiles. The Fabric companion provides arm/threshold fixes and native belt export. See [compatibility details](COMPATIBILITY.md) for supported addon settings and transfer limits.

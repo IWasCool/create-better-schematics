@@ -2,6 +2,9 @@
 
 ## 1.0.0
 
+- Preserve saved belt orientation when the cannon builds over shafts with a different axis.
+- Finish fully skipped, entity-free schematics without requiring gunpowder; keep manual Pause effective without repeated skip-loop work.
+- Clear block skips and skip-missing settings after completion, including stale settings in older finished saves.
 - Keep successful JEI material exports and empty material lists silent.
 - Public release for NeoForge 1.21.1, with Forge and Fabric 1.20.1 companions.
 - Preserve supported machine configuration, filters, arm targets, belt casings and Factory Gauge connections in ordinary Create schematics.

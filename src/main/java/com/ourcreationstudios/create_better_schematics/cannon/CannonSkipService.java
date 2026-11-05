@@ -17,6 +17,7 @@ import com.simibubi.create.content.schematics.SchematicItem;
 import com.simibubi.create.content.schematics.SchematicPrinter;
 import com.simibubi.create.content.schematics.cannon.SchematicannonBlockEntity;
 import com.simibubi.create.content.schematics.cannon.SchematicannonMenu;
+import net.createmod.catnip.levelWrappers.SchematicLevel;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -26,6 +27,21 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public final class CannonSkipService {
     private CannonSkipService() {}
+
+    public static boolean skipsAllBlocks(SchematicLevel schematic, CannonSkipSettings settings) {
+        if (settings.isEmpty() || !schematic.getEntityList().isEmpty())
+            return false;
+        boolean foundBlock = false;
+        // Inspect captured entries, never the potentially much larger bounding volume.
+        for (var state : schematic.getBlockMap().values()) {
+            if (state.isAir() || state.is(Blocks.STRUCTURE_VOID))
+                continue;
+            foundBlock = true;
+            if (!settings.skips(state))
+                return false;
+        }
+        return foundBlock;
+    }
 
     public static SchematicannonBlockEntity openCannon(ServerPlayer player, int menuId) {
         if (!(player.containerMenu instanceof SchematicannonMenu menu) || menu.containerId != menuId)

@@ -14,6 +14,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class CannonSkipSettings {
     private static final String NBT_KEY = "CreateBetterSchematicsSkippedBlocks";
     private final Set<ResourceLocation> skipped = new HashSet<>();
+    private long revision;
 
     public Set<ResourceLocation> skipped() {
         return Set.copyOf(skipped);
@@ -22,6 +23,20 @@ public final class CannonSkipSettings {
     public void replace(Set<ResourceLocation> blocks) {
         skipped.clear();
         skipped.addAll(blocks);
+        revision++;
+    }
+
+    public void clear() {
+        skipped.clear();
+        revision++;
+    }
+
+    public boolean isEmpty() {
+        return skipped.isEmpty();
+    }
+
+    public long revision() {
+        return revision;
     }
 
     public boolean skips(BlockState state) {
@@ -29,7 +44,7 @@ public final class CannonSkipSettings {
     }
 
     public void read(CompoundTag tag) {
-        skipped.clear();
+        clear();
         for (Tag entry : tag.getList(NBT_KEY, Tag.TAG_STRING)) {
             ResourceLocation id = ResourceLocation.tryParse(entry.getAsString());
             if (id != null)

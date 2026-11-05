@@ -18,6 +18,8 @@
     "SchematicPrinterWireMixin",
     "SchematicannonWireMaterialsMixin",
     "StructureTemplateAccessor",
+    "SchematicPrinterAccessor",
+    "SchematicannonBeltPlacementMixin",
     "SchematicannonBlockEntityMixin"
   ],
   "client": ["client.SchematicannonScreenMixin", "client.SchematicTableScreenMixin", "client.SchematicTableTabMixin", "client.SchematicGuiResourcesMixin", "client.BlueprintedIconButtonMixin", "client.JeiBookmarkElementMixin", "client.JeiBookmarkOverlayMixin", "client.TransmissionToolgunNoticeMixin"],

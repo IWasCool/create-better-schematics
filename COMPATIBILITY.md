@@ -8,6 +8,8 @@ Files remain ordinary Create `.nbt` structures with optional compatibility metad
 
 Mechanical arms retain targets and selection modes. Threshold switches retain limits, inversion and stack display. List and built-in Create 6 attribute filters retain supported rules and item data. Belt casings use Create's native `Casing` NBT. Factory Gauges retain panel settings, recipe layouts, frequencies and selected connections, with endpoints adjusted for rotation and mirroring.
 
+The Schematicannon preserves the saved belt's shaft axis when rebuilding over existing shafts. Completed jobs clear block skips and skip-missing settings so the next schematic starts without the previous job's exclusions.
+
 Select both endpoints and backing blocks for connected gauges, wires or rods. Connections outside the selection are omitted. Capture a fresh schematic after installing the addon: information already removed from an old schematic cannot be reconstructed. Fabric fluid limits are converted only when the source unit is known; check older files without that information.
 
 A client-only installation can save only the configuration its server sends it. Install Better Schematics on the destination server for extended placement fixes, and on both peers for the NeoForge cannon picker and material export.
