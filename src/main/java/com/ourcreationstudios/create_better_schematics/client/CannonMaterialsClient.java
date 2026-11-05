@@ -94,12 +94,8 @@ public final class CannonMaterialsClient {
                 EmiCreateSchematicsMaterials.upload(view.entries(), cannon.getBlockPos(), cannon.inventory.getStackInSlot(0));
             else
                 JeiMaterials.upload(view.entries(), cannon.getBlockPos(), cannon.inventory.getStackInSlot(0));
-            if (!request.automatic) {
-                if (view.entries().isEmpty())
-                    message("empty", true);
-                else if (usesEmi())
-                    message("success", true, view.entries().size());
-            }
+            if (!request.automatic && usesEmi() && !view.entries().isEmpty())
+                message("success", true, view.entries().size());
         } catch (RuntimeException exception) {
             CreateBetterSchematics.LOGGER.warn("Cannot export cannon materials to {}", usesEmi() ? "EMI: Create Schematics" : "JEI", exception);
             message(usesEmi() ? "error.emi" : "error.jei", false);

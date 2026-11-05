@@ -2,7 +2,7 @@
 
 ## 1.0.0
 
-- Keep successful JEI material exports silent.
+- Keep successful JEI material exports and empty material lists silent.
 - Public release for NeoForge 1.21.1, with Forge and Fabric 1.20.1 companions.
 - Preserve supported machine configuration, filters, arm targets, belt casings and Factory Gauge connections in ordinary Create schematics.
 - Add Schematic Table mod inspection and a searchable Schematicannon block picker with saved skip choices.
