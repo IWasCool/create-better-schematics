@@ -4,7 +4,7 @@ license="All Rights Reserved"
 issueTrackerURL="https://github.com/IWasCool/create-better-schematics/issues"
 [[mods]]
 modId="create_better_schematics"
-version="0.0.2"
+version="1.0.0"
 displayTest="IGNORE_ALL_VERSION"
 displayName="Create: Better Schematics (Forge companion)"
 displayURL="https://github.com/IWasCool/create-better-schematics"

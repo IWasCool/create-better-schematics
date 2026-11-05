@@ -1,49 +1,27 @@
-### Gradle ###
-.gradle
+# Build and development output
+.gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/**/build/
-
-### IntelliJ IDEA ###
-.idea/
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/**/out/
-
-.run/
-
-### Eclipse ###
-.apt_generated
-.classpath
-.eclipse/
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/**/bin/
-
-### VS Code ###
-.vscode/
-
-### Mac OS ###
-.DS_Store
-
-### Minecraft Modding ###
 run/
-forge/run-gametest/
-fabric/run-gametest/
-fabric/run-porter-gametest/
-fabric/run-gametest-baseline/
-!**/src/**/run/
-**/src/generated/**/.cache/
+run-*/
 repo/
-!**/src/**/repo/
+out/
+bin/
+**/src/generated/**/.cache/
 
-### Local artifacts and credentials ###
+# Editors and operating systems
+.idea/
+.run/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.DS_Store
+Thumbs.db
+
+# Local artifacts and credentials
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 !fabric/gradle/wrapper/gradle-wrapper.jar
@@ -52,12 +30,12 @@ repo/
 *.jfr
 .env
 .env.*
-
-### Local validation files ###
-src/jeiClientTest/
-src/compatTest/
-src/nativeCompatibilityTest/
-**/src/gametest/
-**/src/nativeCompatibilityTest/
 __pycache__/
 *.py[cod]
+
+# Local validation sources are not part of this source distribution
+**/src/test*/
+**/src/*Test*/
+**/src/gametest/
+**/src/gameTest/
+**/fixtures/

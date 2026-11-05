@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'com.ourcreationstudios.create_better_schematics'
-version = '0.0.2'
+version = '1.0.0'
 base.archivesName = 'create_better_schematics-fabric-1.20.1'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 sourceSets.main.java.srcDir('../compatibility/src/main/java')
@@ -22,7 +22,7 @@ dependencies {
 }
 
 // Loom's development remap removes nested JARs. Expose the exact libraries shipped
-// in the pinned Create distribution to both javac and the development test server.
+// in the pinned Create distribution to javac and the development runtime.
 def createArchive = new File(gradle.gradleUserHomeDir, 'caches/better-schematics/create-fabric-HAqwA6X1.jar')
 if (!createArchive.exists()) {
     createArchive.parentFile.mkdirs()
@@ -61,32 +61,9 @@ while (!pendingArchives.isEmpty()) {
 }
 dependencies { modImplementation files(bundledMods.values()) }
 
-sourceSets {
-    gametest {
-        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
-        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
-    }
-}
-
-def baselineTests = providers.gradleProperty('porterBaseline').isPresent()
-def testRunDirectory = baselineTests ? 'run-gametest-baseline' : 'run-porter-gametest'
-
 loom {
     mods {
         create_better_schematics { sourceSet sourceSets.main }
-        better_schematics_tests { sourceSet sourceSets.gametest }
-    }
-    runs {
-        gametest {
-            server()
-            name 'Fabric Porter Game Tests'
-            source sourceSets.gametest
-            vmArg '-Dfabric-api.gametest'
-            vmArg '-Dfabric-api.gametest.report-file=build/gametest-results.xml'
-            if (baselineTests)
-                vmArg '-Dfabric.debug.disableModIds=create_better_schematics,better_schematics_tests'
-            runDir testRunDirectory
-        }
     }
     mixin { defaultRefmapName = 'create_better_schematics_fabric.refmap.json' }
 }
@@ -97,17 +74,3 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
-
-tasks.named('runGametest').configure {
-    def reportFile = file(testRunDirectory + '/build/gametest-results.xml')
-    doFirst { reportFile.delete() }
-    doLast {
-        if (!baselineTests) {
-            if (!reportFile.exists())
-                throw new GradleException('Fabric GameTest server did not produce a result report')
-            def cases = new groovy.xml.XmlSlurper().parse(reportFile).depthFirst().findAll { it.name() == 'testcase' }
-            if (cases.size() != 5 || cases.any { it.failure.size() > 0 || it.error.size() > 0 })
-                throw new GradleException('All five Fabric compatibility tests must pass; inspect ' + reportFile)
-        }
-    }
-}
