@@ -19,13 +19,6 @@ legacyForge {
     mods {
         create_better_schematics { sourceSet sourceSets.main }
     }
-    runs {
-        client {
-            client()
-            loadedMods = [mods.create_better_schematics]
-            programArguments.addAll(['--mixin.config', 'create_better_schematics_forge.mixins.json'])
-        }
-    }
 }
 dependencies {
     modImplementation 'com.simibubi.create:create-1.20.1:6.0.8-289:slim'

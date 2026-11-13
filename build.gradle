@@ -1,7 +1,6 @@
 plugins {
     id 'java-library'
     id 'net.neoforged.moddev' version '2.0.148'
-    id 'idea'
 }
 
 version = mod_version
@@ -30,30 +29,11 @@ neoForge {
         minecraftVersion = project.parchment_minecraft_version
     }
 
-    runs {
-        client {
-            client()
-        }
-
-        server {
-            server()
-            programArgument '--nogui'
-        }
-
-        configureEach {
-            logLevel = org.slf4j.event.Level.INFO
-        }
-    }
-
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
     }
-}
-
-configurations {
-    runtimeClasspath.extendsFrom localRuntime
 }
 
 dependencies {
@@ -63,8 +43,6 @@ dependencies {
     compileOnly 'org.spongepowered:mixin:0.8.5'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
-    localRuntime "net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}"
-    localRuntime 'maven.modrinth:create:UjX6dr61'
 }
 
 // Generate loader metadata from gradle.properties.
@@ -91,48 +69,3 @@ neoForge.ideSyncTask generateModMetadata
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
-
-idea {
-    module {
-        downloadSources = true
-        downloadJavadoc = true
-    }
-}
-
-// Keep packaged languages consistent when adding or updating translations.
-def languageFiles = fileTree('src/main/resources/assets/create_better_schematics/lang') {
-    include '*.json'
-}
-def englishLanguage = file('src/main/resources/assets/create_better_schematics/lang/en_us.json')
-tasks.register('validateTranslations') {
-    inputs.files(languageFiles)
-    doLast {
-        def parser = new groovy.json.JsonSlurper()
-        def english = parser.parse(englishLanguage, 'UTF-8')
-        def arguments = { String value ->
-            def remaining = value.replaceAll(/%(?:[1-9]\d*\$)?s|%%/, '')
-            if (remaining.contains('%'))
-                throw new GradleException('Invalid translation placeholder: ' + value)
-            def implicit = 0
-            def indices = []
-            def matcher = value =~ /%(?:([1-9]\d*)\$)?s|%%/
-            matcher.each { match ->
-                if (match[0] != '%%')
-                    indices.add(match[1] ? match[1].toInteger() : ++implicit)
-            }
-            indices.sort()
-        }
-        languageFiles.each { language ->
-            def entries = parser.parse(language, 'UTF-8')
-            if (entries.keySet() != english.keySet())
-                throw new GradleException('Translation keys differ: ' + language.name)
-            entries.each { key, value ->
-                if (!(value instanceof String) || value.trim().isEmpty() || value.contains('\uFFFD')
-                        || arguments(value) != arguments(english[key]))
-                    throw new GradleException('Invalid translation: ' + language.name + ': ' + key)
-            }
-        }
-        logger.lifecycle('Validated {} keys across {} language file(s)', english.size(), languageFiles.files.size())
-    }
-}
-tasks.named('processResources').configure { dependsOn 'validateTranslations' }

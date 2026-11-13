@@ -14,7 +14,7 @@ Mod version: **1.0.0**.
 - Choose block types to skip in a searchable Schematicannon picker. Encased variants group under their obtainable items. Apply saves choices to the cannon and updates required materials. Skip choices reset when the schematic finishes.
 - Send material quantities to JEI, or delegate EMI exports to EMI: Create Schematics. Applying skips refreshes an imported list while preserving personal bookmarks.
 
-The NeoForge build includes all features. The Forge companion provides arm/threshold fixes, Factory Gauges, Power Grid wires and shared configuration profiles. The Fabric companion provides arm/threshold fixes and native belt export. See [compatibility details](COMPATIBILITY.md) for supported addon settings and transfer limits.
+The NeoForge build includes all features. The Forge companion provides arm/threshold fixes, Factory Gauges, Power Grid wires and shared configuration profiles. The Fabric companion provides arm/threshold fixes and native belt export.
 
 ## Installation
 
@@ -48,7 +48,7 @@ Use a Java 21 JDK. Gradle resolves Java 17 for the companions.
 .\fabric\gradlew.bat -p fabric build
 ```
 
-Upload `build/libs/create_better_schematics-1.0.0.jar` for NeoForge. Companion JARs are in `forge/build/libs/` and `fabric/build/libs/`. Language keys and formatting arguments are checked during the NeoForge build; `./gradlew validateTranslations` runs that check separately.
+Upload `build/libs/create_better_schematics-1.0.0.jar` for NeoForge. Companion JARs are in `forge/build/libs/` and `fabric/build/libs/`.
 
 Report problems through [GitHub Issues](https://github.com/IWasCool/create-better-schematics/issues), including Minecraft/Create versions and the affected schematic or relevant log.
 
